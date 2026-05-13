@@ -357,7 +357,7 @@ export function PlanBuilder({ userId, plans, onUpdate }: Props) {
                 ) : (
                   <div className="px-4 py-8 text-center space-y-2">
                     <Moon className="w-8 h-8 text-muted-foreground/40 mx-auto" />
-                    <p className="text-sm text-muted-foreground">Rest day — tap "Train" to add exercises</p>
+                    <p className="text-sm text-muted-foreground">Rest day — tap &quot;Train&quot; to add exercises</p>
                   </div>
                 )}
               </div>

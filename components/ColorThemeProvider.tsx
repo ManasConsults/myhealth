@@ -20,7 +20,7 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     // Read stored value set by the inline script (or fall back to default)
     const stored = document.documentElement.getAttribute("data-color") as ColorThemeId | null;
-    if (stored) setColorThemeState(stored);
+    if (stored) setColorThemeState(stored); // eslint-disable-line react-hooks/set-state-in-effect
   }, []);
 
   function setColorTheme(id: ColorThemeId) {

@@ -10,7 +10,7 @@ export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   // Avoid hydration mismatch — only render icon after mount
-  useEffect(() => setMounted(true), []);
+  useEffect(() => setMounted(true), []); // eslint-disable-line react-hooks/set-state-in-effect
 
   if (!mounted) return <Button variant="ghost" size="icon" className="h-8 w-8" />;
 

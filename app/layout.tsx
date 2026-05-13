@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { SessionProvider } from "@/components/SessionProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ColorThemeProvider } from "@/components/ColorThemeProvider";
 import { COLOR_THEME_STORAGE_KEY, DEFAULT_COLOR_THEME } from "@/lib/color-themes";
@@ -31,9 +32,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider>
           <ColorThemeProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <SessionProvider>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </SessionProvider>
           </ColorThemeProvider>
         </ThemeProvider>
       </body>

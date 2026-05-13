@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +8,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { createNutritionPlan, editNutritionPlan, removeNutritionPlan } from "@/lib/actions";
-import { MEAL_LABELS, MEAL_ORDER, MealType, NutritionPlan, NutritionPlanFood, NutritionPlanMeal } from "@/lib/types";
-import { Check, ChevronDown, ChevronUp, Pencil, Plus, Salad, Trash2, X } from "lucide-react";
+import { createNutritionPlan, editNutritionPlan, fetchFoodPortionSize, removeNutritionPlan, searchFoods, updateFoodServing } from "@/lib/actions";
+import {
+  FOOD_UNIT_OPTIONS,
+  FoodSearchResult,
+  FoodUnit,
+  MEAL_LABELS,
+  MEAL_ORDER,
+  MealType,
+  NutritionPlan,
+  NutritionPlanFood,
+  NutritionPlanMeal,
+  VARIABLE_UNIT_DEFAULTS,
+  gramsFromUnit,
+  isVariableUnit,
+} from "@/lib/types";
+import { Check, ChevronDown, ChevronUp, Loader2, Pencil, Plus, Salad, Search, Trash2, X } from "lucide-react";
 
 // ── Food library ─────────────────────────────────────────────────────────────
 
@@ -107,6 +120,82 @@ export function NutritionPlanner({ userId, plans, onUpdate }: Props) {
   const [showCustom, setShowCustom] = useState(false);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
 
+  // USDA search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [pendingFood, setPendingFood] = useState<FoodSearchResult | null>(null);
+  const [pendingFoodName, setPendingFoodName] = useState("");
+  const [pendingQty, setPendingQty] = useState("100");
+  const [pendingUnit, setPendingUnit] = useState<FoodUnit>("g");
+  const [pendingGramsPerUnit, setPendingGramsPerUnit] = useState("100");
+
+  useEffect(() => {
+    if (searchQuery.length < 2) { setSearchResults([]); return; }
+    let cancelled = false;
+    setIsSearching(true);
+    const timer = setTimeout(async () => {
+      const results = await searchFoods(searchQuery);
+      if (!cancelled) { setSearchResults(results); setIsSearching(false); }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); setIsSearching(false); };
+  }, [searchQuery]);
+
+  function selectSearchResult(food: FoodSearchResult) {
+    const unit = food.servingUnit as FoodUnit;
+    const gpu = food.gramsPerServing;
+    setPendingFood(food);
+    setPendingFoodName(food.name);
+    setPendingUnit(unit);
+    setPendingGramsPerUnit(String(gpu));
+    setPendingQty(unit === "g" ? String(gpu) : "1");
+    setSearchQuery("");
+    setSearchResults([]);
+  }
+
+  // Fetch real portion size from USDA detail endpoint after food is selected
+  useEffect(() => {
+    if (!pendingFood || pendingUnit !== "g") return;
+    let cancelled = false;
+    fetchFoodPortionSize(pendingFood.fdcId).then((realGpu) => {
+      if (cancelled || !realGpu || realGpu === parseFloat(pendingGramsPerUnit)) return;
+      setPendingGramsPerUnit(String(realGpu));
+      setPendingQty(String(realGpu));
+    });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingFood?.fdcId]);
+
+  function confirmSearchFood() {
+    if (!pendingFood) return;
+    const grams = gramsFromUnit(parseFloat(pendingQty) || 1, pendingUnit, parseFloat(pendingGramsPerUnit));
+    const factor = grams / 100;
+    setMeals((prev) => ({
+      ...prev,
+      [selectedMeal]: [...prev[selectedMeal], {
+        name: pendingFoodName.trim() || pendingFood.name,
+        calories: Math.round(pendingFood.calories * factor),
+        protein: parseFloat((pendingFood.protein * factor).toFixed(1)),
+        carbs: parseFloat((pendingFood.carbs * factor).toFixed(1)),
+        fat: parseFloat((pendingFood.fat * factor).toFixed(1)),
+      }],
+    }));
+    updateFoodServing(pendingFood.fdcId, pendingUnit, parseFloat(pendingGramsPerUnit));
+    setPendingFood(null);
+    setPendingFoodName("");
+    setPendingQty("100");
+    setPendingUnit("g");
+    setPendingGramsPerUnit("100");
+  }
+
+  function cancelSearchFood() {
+    setPendingFood(null);
+    setPendingFoodName("");
+    setPendingQty("100");
+    setPendingUnit("g");
+    setPendingGramsPerUnit("100");
+  }
+
   function resetSheetState() {
     setPlanName("");
     setMeals(emptyMeals());
@@ -114,6 +203,7 @@ export function NutritionPlanner({ userId, plans, onUpdate }: Props) {
     setActiveCategory("Proteins");
     setCustomName(""); setCustomCal(""); setCustomProtein("0"); setCustomCarbs("0"); setCustomFat("0");
     setShowCustom(false);
+    setSearchQuery(""); setSearchResults([]); setPendingFood(null); setPendingFoodName(""); setPendingQty("100"); setPendingUnit("g"); setPendingGramsPerUnit("100");
   }
 
   function openSheet() {
@@ -310,50 +400,161 @@ export function NutritionPlanner({ userId, plans, onUpdate }: Props) {
 
                   <Separator />
 
-                  {/* Category tabs */}
-                  <div className="space-y-3">
-                    <div className="flex gap-1.5 flex-wrap">
-                      {(Object.keys(FOOD_LIBRARY) as LibraryCategory[]).map((cat) => (
+                  {/* USDA food search */}
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => { setSearchQuery(e.target.value); cancelSearchFood(); }}
+                        placeholder="Search food database…"
+                        className="pl-8 pr-8 h-9 text-sm"
+                      />
+                      {isSearching ? (
+                        <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                      ) : searchQuery ? (
                         <button
-                          key={cat}
                           type="button"
-                          onClick={() => setActiveCategory(cat)}
-                          className={[
-                            "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
-                            activeCategory === cat
-                              ? "bg-foreground text-background border-foreground"
-                              : "bg-transparent text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground",
-                          ].join(" ")}
+                          onClick={() => { setSearchQuery(""); setSearchResults([]); }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 min-w-8 min-h-8 flex items-center justify-center"
                         >
-                          {cat}
+                          <X className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
-                      ))}
+                      ) : null}
                     </div>
 
-                    {/* Food chips */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {FOOD_LIBRARY[activeCategory].map((food) => {
-                        const picked = selectedFoods.some((f) => f.name === food.name);
-                        return (
+                    {/* Search results */}
+                    {searchResults.length > 0 && (
+                      <div className="rounded-lg border bg-card overflow-hidden max-h-44 overflow-y-auto">
+                        {searchResults.map((food) => (
                           <button
-                            key={food.name}
+                            key={food.fdcId}
                             type="button"
-                            onClick={() => toggleLibraryFood(food)}
+                            onClick={() => selectSearchResult(food)}
+                            className="w-full text-left px-3 py-2 hover:bg-muted transition-colors border-b last:border-b-0"
+                          >
+                            <p className="text-xs font-medium truncate">{food.name}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {Math.round(food.calories)} kcal · {food.protein.toFixed(1)}g P · {food.carbs.toFixed(1)}g C · {food.fat.toFixed(1)}g F
+                              <span className="ml-1 opacity-50">per 100g</span>
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Pending food — quantity & name confirmation */}
+                    {pendingFood && (
+                      <div className="rounded-lg border bg-card p-3 space-y-2.5">
+                        <Input
+                          value={pendingFoodName}
+                          onChange={(e) => setPendingFoodName(e.target.value)}
+                          className="h-8 text-xs"
+                          placeholder="Food name"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={0.1}
+                            step="any"
+                            value={pendingQty}
+                            onChange={(e) => setPendingQty(e.target.value)}
+                            className="h-7 text-xs w-16"
+                          />
+                          <select
+                            value={pendingUnit}
+                            onChange={(e) => {
+                              const u = e.target.value as FoodUnit;
+                              setPendingUnit(u);
+                              if (isVariableUnit(u)) setPendingGramsPerUnit(String(VARIABLE_UNIT_DEFAULTS[u] ?? 100));
+                            }}
+                            className="h-7 rounded-md border border-input bg-transparent px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                          >
+                            {FOOD_UNIT_OPTIONS.map((u) => (
+                              <option key={u} value={u}>{u}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {(() => {
+                          const grams = gramsFromUnit(parseFloat(pendingQty || "0"), pendingUnit, parseFloat(pendingGramsPerUnit));
+                          const f = grams / 100;
+                          return (
+                            <div className="flex gap-3 text-[10px] font-medium px-0.5">
+                              <span className="text-foreground">{Math.round(pendingFood.calories * f)} kcal</span>
+                              <span className="text-blue-500">{(pendingFood.protein * f).toFixed(1)}g P</span>
+                              <span className="text-amber-500">{(pendingFood.carbs * f).toFixed(1)}g C</span>
+                              <span className="text-red-500">{(pendingFood.fat * f).toFixed(1)}g F</span>
+                            </div>
+                          );
+                        })()}
+                        <div className="flex gap-1.5">
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-7 text-xs flex-1"
+                            onClick={confirmSearchFood}
+                            disabled={!pendingQty || parseFloat(pendingQty) <= 0}
+                          >
+                            Add to {MEAL_LABELS[selectedMeal]}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={cancelSearchFood}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick-pick library — hidden while search is active */}
+                  {!searchQuery && !pendingFood && (
+                    <div className="space-y-3">
+                      <div className="flex gap-1.5 flex-wrap">
+                        {(Object.keys(FOOD_LIBRARY) as LibraryCategory[]).map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setActiveCategory(cat)}
                             className={[
-                              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
-                              picked
-                                ? "bg-primary/10 text-primary border-primary/40 shadow-sm"
-                                : "bg-background text-foreground border-border hover:border-primary/30 hover:bg-primary/5",
+                              "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+                              activeCategory === cat
+                                ? "bg-foreground text-background border-foreground"
+                                : "bg-transparent text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground",
                             ].join(" ")}
                           >
-                            {picked && <Check className="w-3 h-3 shrink-0" />}
-                            <span>{food.name}</span>
-                            <span className="text-[10px] opacity-60">{food.calories}kcal</span>
+                            {cat}
                           </button>
-                        );
-                      })}
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {FOOD_LIBRARY[activeCategory].map((food) => {
+                          const picked = selectedFoods.some((f) => f.name === food.name);
+                          return (
+                            <button
+                              key={food.name}
+                              type="button"
+                              onClick={() => toggleLibraryFood(food)}
+                              className={[
+                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                                picked
+                                  ? "bg-primary/10 text-primary border-primary/40 shadow-sm"
+                                  : "bg-background text-foreground border-border hover:border-primary/30 hover:bg-primary/5",
+                              ].join(" ")}
+                            >
+                              {picked && <Check className="w-3 h-3 shrink-0" />}
+                              <span>{food.name}</span>
+                              <span className="text-[10px] opacity-60">{food.calories}kcal</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <Separator />
 

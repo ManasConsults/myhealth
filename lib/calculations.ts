@@ -1,4 +1,4 @@
-import { ActivityLevel, Goal, MacroTargets, PhysicalMetrics, TDEEFormula } from "./types";
+import { ActivityLevel, MacroTargets, PhysicalMetrics, TDEEFormula } from "./types";
 
 const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   sedentary: 1.2,
