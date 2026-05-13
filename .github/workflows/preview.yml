@@ -24,8 +24,6 @@ jobs:
 
       - run: npm run lint
 
-      - run: npm run db:generate
-
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
