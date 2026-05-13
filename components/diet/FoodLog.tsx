@@ -135,9 +135,12 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
 
   // ── Food search ────────────────────────────────────────────────
 
+  const visibleResults = searchQuery.length >= 2 ? searchResults : [];
+
   useEffect(() => {
-    if (searchQuery.length < 2) { setSearchResults([]); return; }
+    if (searchQuery.length < 2) return;
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSearching(true);
     const timer = setTimeout(async () => {
       const results = await searchFoods(searchQuery);
@@ -187,6 +190,7 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
     if (!selectedFood) return;
     const qty = parseFloat(foodQty);
     if (!qty || qty <= 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     applyMacros(selectedFood, qty, foodUnit, parseFloat(foodGramsPerUnit) || 100);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFood?.fdcId, foodQty, foodUnit, foodGramsPerUnit]);
@@ -663,9 +667,9 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
                 ) : null}
               </div>
 
-              {searchResults.length > 0 && (
+              {visibleResults.length > 0 && (
                 <div className="rounded-xl border bg-card overflow-hidden max-h-48 overflow-y-auto">
-                  {searchResults.map((food) => (
+                  {visibleResults.map((food) => (
                     <button
                       key={food.fdcId}
                       type="button"

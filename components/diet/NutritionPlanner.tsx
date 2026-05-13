@@ -130,9 +130,12 @@ export function NutritionPlanner({ userId, plans, onUpdate }: Props) {
   const [pendingUnit, setPendingUnit] = useState<FoodUnit>("g");
   const [pendingGramsPerUnit, setPendingGramsPerUnit] = useState("100");
 
+  const visibleResults = searchQuery.length >= 2 ? searchResults : [];
+
   useEffect(() => {
-    if (searchQuery.length < 2) { setSearchResults([]); return; }
+    if (searchQuery.length < 2) return;
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSearching(true);
     const timer = setTimeout(async () => {
       const results = await searchFoods(searchQuery);
@@ -424,9 +427,9 @@ export function NutritionPlanner({ userId, plans, onUpdate }: Props) {
                     </div>
 
                     {/* Search results */}
-                    {searchResults.length > 0 && (
+                    {visibleResults.length > 0 && (
                       <div className="rounded-lg border bg-card overflow-hidden max-h-44 overflow-y-auto">
-                        {searchResults.map((food) => (
+                        {visibleResults.map((food) => (
                           <button
                             key={food.fdcId}
                             type="button"
