@@ -48,7 +48,7 @@ export default function AdminPage() {
               <CardTitle className="text-sm font-medium">All Users</CardTitle>
             </CardHeader>
             <CardContent>
-              <UserManagement users={users} />
+              <UserManagement users={users} currentUserId={user.id} onUpdate={() => void fetchAllUsers().then(setUsers)} />
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,17 +9,23 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { clearFoodLogForDate, logFood, logFoodsBatch, logWater, removeFood, removeWater } from "@/lib/actions";
+import { clearFoodLogForDate, fetchFoodPortionSize, logFood, logFoodsBatch, logWater, removeFood, removeWater, searchFoods, updateFoodServing } from "@/lib/actions";
 import {
+  FOOD_UNIT_OPTIONS,
   FoodEntry,
+  FoodSearchResult,
+  FoodUnit,
   MacroTargets,
   MEAL_LABELS,
   MEAL_ORDER,
   MealType,
   NutritionPlan,
+  VARIABLE_UNIT_DEFAULTS,
   WaterEntry,
+  gramsFromUnit,
+  isVariableUnit,
 } from "@/lib/types";
-import { BookOpen, ChevronLeft, ChevronRight, Droplets, Plus, Trash2 } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, Droplets, Loader2, Plus, Search, Trash2, X } from "lucide-react";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -87,6 +93,15 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
   const [foodCarbs, setFoodCarbs] = useState("0");
   const [foodFat, setFoodFat] = useState("0");
 
+  // Food search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null);
+  const [foodQty, setFoodQty] = useState("100");
+  const [foodUnit, setFoodUnit] = useState<FoodUnit>("g");
+  const [foodGramsPerUnit, setFoodGramsPerUnit] = useState("100");
+
   // Log from plan sheet
   const [planOpen, setPlanOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id ?? "");
@@ -118,17 +133,105 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
   const datesWithEntries = new Set(allEntries.map((e) => e.date));
   const datesWithWater = new Set(waterLog.map((w) => w.date));
 
+  // ── Food search ────────────────────────────────────────────────
+
+  const visibleResults = searchQuery.length >= 2 ? searchResults : [];
+
+  useEffect(() => {
+    if (searchQuery.length < 2) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsSearching(true);
+    const timer = setTimeout(async () => {
+      const results = await searchFoods(searchQuery);
+      if (!cancelled) { setSearchResults(results); setIsSearching(false); }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); setIsSearching(false); };
+  }, [searchQuery]);
+
+  function applyMacros(food: FoodSearchResult, qty: number, unit: FoodUnit, gpu: number) {
+    const grams = gramsFromUnit(qty, unit, gpu);
+    const factor = grams / 100;
+    setFoodCal(String(Math.round(food.calories * factor)));
+    setFoodProtein((food.protein * factor).toFixed(1));
+    setFoodCarbs((food.carbs * factor).toFixed(1));
+    setFoodFat((food.fat * factor).toFixed(1));
+  }
+
+  function selectFood(food: FoodSearchResult) {
+    const unit = food.servingUnit as FoodUnit;
+    const gpu = food.gramsPerServing;
+    const initQty = unit === "g" ? gpu : 1;
+    setSelectedFood(food);
+    setFoodName(food.name);
+    setFoodUnit(unit);
+    setFoodGramsPerUnit(String(gpu));
+    setFoodQty(String(initQty));
+    applyMacros(food, initQty, unit, gpu);
+    setSearchResults([]);
+    setSearchQuery("");
+  }
+
+  // Fetch real portion size from USDA detail endpoint; only updates qty
+  useEffect(() => {
+    if (!selectedFood || foodUnit !== "g") return;
+    let cancelled = false;
+    fetchFoodPortionSize(selectedFood.fdcId).then((realGpu) => {
+      if (cancelled || !realGpu) return;
+      setFoodGramsPerUnit(String(realGpu));
+      setFoodQty(String(realGpu));
+    });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFood?.fdcId]);
+
+  // Recalculate macros whenever qty, unit, or selected food changes
+  useEffect(() => {
+    if (!selectedFood) return;
+    const qty = parseFloat(foodQty);
+    if (!qty || qty <= 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    applyMacros(selectedFood, qty, foodUnit, parseFloat(foodGramsPerUnit) || 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFood?.fdcId, foodQty, foodUnit, foodGramsPerUnit]);
+
+  function handleQtyChange(qty: string) {
+    setFoodQty(qty);
+    if (!selectedFood || !qty) return;
+    applyMacros(selectedFood, parseFloat(qty), foodUnit, parseFloat(foodGramsPerUnit));
+  }
+
+  function handleUnitChange(unit: FoodUnit) {
+    setFoodUnit(unit);
+    if (!selectedFood) return;
+    const gpu = isVariableUnit(unit) ? (VARIABLE_UNIT_DEFAULTS[unit] ?? 100) : 100;
+    setFoodGramsPerUnit(String(gpu));
+    applyMacros(selectedFood, parseFloat(foodQty) || 1, unit, gpu);
+  }
+
+
   // ── Add food ───────────────────────────────────────────────────
 
   function openAddDialog(meal: MealType) {
     setAddMeal(meal);
     setFoodName(""); setFoodCal(""); setFoodProtein("0"); setFoodCarbs("0"); setFoodFat("0");
+    setSearchQuery(""); setSearchResults([]); setSelectedFood(null);
+    setFoodQty("100"); setFoodUnit("g"); setFoodGramsPerUnit("100");
+  }
+
+  function closeAddDialog() {
+    setAddMeal(null);
+    setSearchQuery(""); setSearchResults([]); setSelectedFood(null);
+    setFoodQty("100"); setFoodUnit("g"); setFoodGramsPerUnit("100");
   }
 
   function handleAddFood(e: React.BaseSyntheticEvent) {
     e.preventDefault();
     if (!addMeal) return;
     startTransition(async () => {
+      if (selectedFood) {
+        await updateFoodServing(selectedFood.fdcId, foodUnit, parseFloat(foodGramsPerUnit));
+      }
       await logFood({
         userId,
         date: selectedDate,
@@ -139,7 +242,7 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
         fat: parseFloat(foodFat),
         mealType: addMeal,
       });
-      setAddMeal(null);
+      closeAddDialog();
       onUpdate();
     });
   }
@@ -531,40 +634,125 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
       </div>
 
       {/* ── Add food dialog ─────────────────────────────────────── */}
-      <Dialog open={addMeal !== null} onOpenChange={(o) => { if (!o) setAddMeal(null); }}>
+      <Dialog open={addMeal !== null} onOpenChange={(o) => { if (!o) closeAddDialog(); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {addMeal ? `${MEAL_ICONS[addMeal]} Add to ${MEAL_LABELS[addMeal]}` : "Add Food"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAddFood} className="space-y-4 mt-2">
+
+          <div className="space-y-4 mt-2">
+            {/* Search */}
             <div className="space-y-1.5">
-              <Label>Food Name</Label>
-              <Input value={foodName} onChange={(e) => setFoodName(e.target.value)} placeholder="e.g. Chicken breast" required />
+              <Label>Search food database</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setSelectedFood(null); }}
+                  placeholder="e.g. chicken breast, oats…"
+                  className="pl-9 pr-9"
+                />
+                {isSearching ? (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                ) : searchQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(""); setSearchResults([]); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 min-w-11 min-h-11 flex items-center justify-center -mr-3"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                ) : null}
+              </div>
+
+              {visibleResults.length > 0 && (
+                <div className="rounded-xl border bg-card overflow-hidden max-h-48 overflow-y-auto">
+                  {visibleResults.map((food) => (
+                    <button
+                      key={food.fdcId}
+                      type="button"
+                      onClick={() => selectFood(food)}
+                      className="w-full text-left px-3 py-2.5 hover:bg-muted transition-colors border-b last:border-b-0"
+                    >
+                      <p className="text-sm font-medium truncate">{food.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {Math.round(food.calories)} kcal · {food.protein.toFixed(1)}g P · {food.carbs.toFixed(1)}g C · {food.fat.toFixed(1)}g F
+                        <span className="ml-1 opacity-50">per 100g</span>
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+
+            {/* Entry form */}
+            <form onSubmit={handleAddFood} className="space-y-3">
               <div className="space-y-1.5">
-                <Label>Calories</Label>
-                <Input type="number" value={foodCal} onChange={(e) => setFoodCal(e.target.value)} min={0} required />
+                <Label>Food Name</Label>
+                <Input
+                  value={foodName}
+                  onChange={(e) => { setFoodName(e.target.value); if (selectedFood) setSelectedFood(null); }}
+                  placeholder="e.g. Chicken breast"
+                  required
+                />
               </div>
-              <div className="space-y-1.5">
-                <Label>Protein (g)</Label>
-                <Input type="number" value={foodProtein} onChange={(e) => setFoodProtein(e.target.value)} min={0} step="0.1" />
+
+              {selectedFood && (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <div className="space-y-1.5 flex-1">
+                      <Label>Quantity</Label>
+                      <Input
+                        type="number"
+                        value={foodQty}
+                        onChange={(e) => handleQtyChange(e.target.value)}
+                        min={0.1}
+                        step="any"
+                        placeholder="1"
+                      />
+                    </div>
+                    <div className="space-y-1.5 w-28">
+                      <Label>Unit</Label>
+                      <select
+                        value={foodUnit}
+                        onChange={(e) => handleUnitChange(e.target.value as FoodUnit)}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        {FOOD_UNIT_OPTIONS.map((u) => (
+                          <option key={u} value={u}>{u}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Calories</Label>
+                  <Input type="number" value={foodCal} onChange={(e) => setFoodCal(e.target.value)} min={0} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Protein (g)</Label>
+                  <Input type="number" value={foodProtein} onChange={(e) => setFoodProtein(e.target.value)} min={0} step="0.1" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Carbs (g)</Label>
+                  <Input type="number" value={foodCarbs} onChange={(e) => setFoodCarbs(e.target.value)} min={0} step="0.1" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Fat (g)</Label>
+                  <Input type="number" value={foodFat} onChange={(e) => setFoodFat(e.target.value)} min={0} step="0.1" />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Carbs (g)</Label>
-                <Input type="number" value={foodCarbs} onChange={(e) => setFoodCarbs(e.target.value)} min={0} step="0.1" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Fat (g)</Label>
-                <Input type="number" value={foodFat} onChange={(e) => setFoodFat(e.target.value)} min={0} step="0.1" />
-              </div>
-            </div>
-            <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Adding…" : "Add Entry"}
-            </Button>
-          </form>
+
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? "Adding…" : "Add Entry"}
+              </Button>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
 

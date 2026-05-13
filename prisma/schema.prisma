@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum PlanningMode {
+  guided
+  manual
+}
+
+enum Goal {
+  weight_loss
+  muscle_gain
+  maintenance
+}
+
+enum ActivityLevel {
+  sedentary
+  light
+  moderate
+  active
+  very_active
+}
+
+enum TDEEFormula {
+  mifflin_st_jeor
+  harris_benedict
+  katch_mcardle
+}
+
+enum MealType {
+  breakfast
+  lunch
+  snacks
+  dinner
+}
+
+enum UserStatus {
+  pending
+  approved
+  rejected
+}
+
+model User {
+  id                 String         @id @default(cuid())
+  email              String?        @unique
+  username           String         @unique
+  password           String?
+  role               UserRole       @default(user)
+  planningMode       PlanningMode   @default(guided)
+  onboardingComplete Boolean        @default(false)
+  // PhysicalMetrics — stored flat so they're queryable
+  weight             Float?
+  height             Float?
+  age                Int?
+  activityLevel      ActivityLevel?
+  goal               Goal?
+  // MacroTargets — stored flat
+  targetCalories     Float?
+  targetProtein      Float?
+  targetCarbs        Float?
+  targetFat          Float?
+  status             UserStatus     @default(pending)
+  foodEntries        FoodEntry[]
+  waterEntries       WaterEntry[]
+  nutritionPlans     NutritionPlan[]
+  workoutPlans       WorkoutPlan[]
+  workoutLog         WorkoutLogEntry[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+model FoodEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String   // YYYY-MM-DD
+  name      String
+  calories  Float
+  protein   Float
+  carbs     Float
+  fat       Float
+  mealType  MealType
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model WaterEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String   // YYYY-MM-DD
+  amountMl  Int
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model NutritionPlan {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  meals     Json     // NutritionPlanMeal[]
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model WorkoutPlan {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  days      Json     // WorkoutDay[]
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model WorkoutLogEntry {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         String   // YYYY-MM-DD
+  exerciseId   String
+  exerciseName String
+  sets         Json     // WorkoutSet[]
+  createdAt    DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+// Singleton row — always id = "global"
+model GlobalSettings {
+  id          String      @id @default("global")
+  tdeeFormula TDEEFormula @default(mifflin_st_jeor)
+}
+
+// Cache for USDA FoodData Central search results — populated on first search, never updated
+model FoodCache {
+  fdcId           Int      @id
+  name            String
+  brand           String?
+  // macros per 100g
+  calories        Float
+  protein         Float
+  carbs           Float
+  fat             Float
+  servingUnit     String   @default("g")
+  gramsPerServing Float    @default(100)
+  createdAt       DateTime @default(now())
+
+  @@index([name])
+}

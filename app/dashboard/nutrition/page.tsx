@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FoodLog } from "@/components/diet/FoodLog";
 import { NutritionPlanner } from "@/components/diet/NutritionPlanner";
+import { NutritionReports } from "@/components/diet/NutritionReports";
 import { useAuth } from "@/lib/auth-context";
 import { fetchFoodLog, fetchNutritionPlans, fetchWaterLog } from "@/lib/actions";
 import { FoodEntry, NutritionPlan, WaterEntry } from "@/lib/types";
@@ -31,6 +32,7 @@ export default function NutritionPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void reloadFood();
     void reloadWater();
     void reloadPlans();
@@ -49,6 +51,7 @@ export default function NutritionPage() {
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="log" className="flex-1 sm:flex-none">Food Log</TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Plans</TabsTrigger>
+          <TabsTrigger value="reports" className="flex-1 sm:flex-none">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="log" className="mt-4">
@@ -64,6 +67,14 @@ export default function NutritionPage() {
 
         <TabsContent value="plans" className="mt-4">
           <NutritionPlanner userId={user.id} plans={plans} onUpdate={reloadPlans} />
+        </TabsContent>
+
+        <TabsContent value="reports" className="mt-4">
+          <NutritionReports
+            allEntries={allEntries}
+            waterLog={waterLog}
+            macroTargets={user.macroTargets}
+          />
         </TabsContent>
       </Tabs>
     </div>

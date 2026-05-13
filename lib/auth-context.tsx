@@ -1,13 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { UserProfile } from "./types";
-import { validateLogin } from "./mock-store";
-import { fetchUser } from "./actions";
+import { loginUser, fetchUser } from "./actions";
 
 interface AuthContextValue {
   user: UserProfile | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -15,24 +15,42 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<UserProfile | null>(null);
 
-  async function login(username: string, password: string): Promise<boolean> {
-    const found = validateLogin(username, password);
-    if (!found) return false;
-    // Fetch server-side state so we get the real onboardingComplete / metrics
-    const fresh = await fetchUser(found.id);
-    setUser(fresh ?? found);
+  // Restore full UserProfile from Auth.js session on page load / refresh.
+  useEffect(() => {
+    if (status === "loading") return;
+    if (status === "authenticated" && session?.user?.id) {
+      fetchUser(session.user.id).then((profile) => setUser(profile ?? null));
+    } else if (status === "unauthenticated") {
+      setUser(null); // eslint-disable-line react-hooks/set-state-in-effect
+    }
+  }, [session, status]);
+
+  async function login(email: string, password: string): Promise<boolean> {
+    const profile = await loginUser(email, password);
+    if (!profile) return false;
+
+    try {
+      await signIn("credentials", { email, password, redirect: false });
+    } catch {
+      // credentials already verified above — transient signIn error, proceed
+    }
+
+    setUser(profile);
     return true;
   }
 
-  function logout() {
+  function logout(): void {
     setUser(null);
+    void signOut({ callbackUrl: "/" });
   }
 
   async function refreshUser(): Promise<void> {
-    if (!user) return;
-    const fresh = await fetchUser(user.id);
+    const id = user?.id ?? session?.user?.id;
+    if (!id) return;
+    const fresh = await fetchUser(id);
     if (fresh) setUser({ ...fresh });
   }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlanBuilder } from "@/components/workout/PlanBuilder";
 import { ExerciseLogger } from "@/components/workout/ExerciseLogger";
+import { WorkoutReports } from "@/components/workout/WorkoutReports";
 import { useAuth } from "@/lib/auth-context";
 import { fetchWorkoutPlans, fetchWorkoutLog } from "@/lib/actions";
 import { WorkoutLogEntry, WorkoutPlan } from "@/lib/types";
@@ -22,6 +23,7 @@ export default function WorkoutPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void reloadPlans();
     void reloadLog();
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -39,6 +41,7 @@ export default function WorkoutPage() {
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="log" className="flex-1 sm:flex-none">Exercise Log</TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Plans</TabsTrigger>
+          <TabsTrigger value="reports" className="flex-1 sm:flex-none">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="log" className="mt-4">
@@ -47,6 +50,10 @@ export default function WorkoutPage() {
 
         <TabsContent value="plans" className="mt-4">
           <PlanBuilder userId={user.id} plans={plans} onUpdate={reloadPlans} />
+        </TabsContent>
+
+        <TabsContent value="reports" className="mt-4">
+          <WorkoutReports log={log} />
         </TabsContent>
       </Tabs>
     </div>

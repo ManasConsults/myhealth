@@ -4,6 +4,7 @@ export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "ver
 export type TDEEFormula = "mifflin_st_jeor" | "harris_benedict" | "katch_mcardle";
 export type UserRole = "user" | "admin";
 export type MealType = "breakfast" | "lunch" | "snacks" | "dinner";
+export type UserStatus = "pending" | "approved" | "rejected";
 
 export interface PhysicalMetrics {
   weight: number; // kg
@@ -22,8 +23,10 @@ export interface MacroTargets {
 
 export interface UserProfile {
   id: string;
+  email?: string;
   username: string;
   role: UserRole;
+  status: UserStatus;
   planningMode: PlanningMode;
   metrics: PhysicalMetrics | null;
   macroTargets: MacroTargets | null;
@@ -125,3 +128,45 @@ export const GOAL_LABELS: Record<Goal, string> = {
   muscle_gain: "Muscle Gain",
   maintenance: "Maintenance",
 };
+
+export const FOOD_UNIT_OPTIONS = ["g", "oz", "ml", "piece", "slice", "serving", "cup", "tbsp", "tsp"] as const;
+export type FoodUnit = typeof FOOD_UNIT_OPTIONS[number];
+
+// Fixed gram conversion for weight/volume units — no per-unit input needed
+export const UNIT_GRAM_FACTORS: Partial<Record<FoodUnit, number>> = {
+  g: 1,
+  oz: 28.35,
+  ml: 1,
+};
+
+// Sensible defaults when user first selects a variable unit
+export const VARIABLE_UNIT_DEFAULTS: Partial<Record<FoodUnit, number>> = {
+  piece: 100,
+  slice: 30,
+  serving: 100,
+  cup: 240,
+  tbsp: 15,
+  tsp: 5,
+};
+
+export function isVariableUnit(unit: FoodUnit): boolean {
+  return !(unit in UNIT_GRAM_FACTORS);
+}
+
+export function gramsFromUnit(qty: number, unit: FoodUnit, gramsPerUnit: number): number {
+  const factor = UNIT_GRAM_FACTORS[unit];
+  return factor !== undefined ? qty * factor : qty * gramsPerUnit;
+}
+
+export interface FoodSearchResult {
+  fdcId: number;
+  name: string;
+  brand?: string;
+  // values are per 100g
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  servingUnit: FoodUnit;
+  gramsPerServing: number;
+}

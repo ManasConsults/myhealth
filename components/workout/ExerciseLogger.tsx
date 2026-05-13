@@ -9,7 +9,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { clearWorkoutLogForDate, logWorkout, logWorkoutsBatch, removeWorkoutLogEntry, updateWorkoutLogEntry } from "@/lib/actions";
 import { WorkoutLogEntry, WorkoutPlan, WorkoutSet } from "@/lib/types";
 import { BookOpen, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
@@ -17,7 +16,6 @@ import { BookOpen, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lu
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const JS_DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const WEEK_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const CAL_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -26,19 +24,6 @@ const MONTH_NAMES = [
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function getWeekDates(): Record<string, string> {
-  const now = new Date();
-  const dow = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + (dow === 0 ? -6 : 1 - dow));
-  return Object.fromEntries(
-    WEEK_ORDER.map((day, i) => {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      return [day, d.toISOString().split("T")[0]];
-    })
-  );
-}
 
 function setsKey(day: string, exercise: string) {
   return `${day}::${exercise}`;
@@ -73,7 +58,6 @@ interface Props {
 
 export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
   const today = new Date().toISOString().split("T")[0];
-  const todayDayName = JS_DAY_NAMES[new Date().getDay()];
 
   // Ad-hoc dialog
   const [open, setOpen] = useState(false);
@@ -87,7 +71,6 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
   // Plan log sheet
   const [planOpen, setPlanOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState("");
-  const [scope, setScope] = useState<"today" | "week">("today");
   // When today is a rest day, user can pick a plan day to borrow exercises from — still logged for today
   const [borrowDay, setBorrowDay] = useState<string | null>(null);
   const [setsMap, setSetsMap] = useState<SetsMap>({});
@@ -118,11 +101,10 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
   function handleLog(e: React.BaseSyntheticEvent) {
     e.preventDefault();
     startTransition(async () => {
-      await logWorkout(userId, exerciseName, sets);
+      await logWorkout(userId, exerciseName, sets, selectedDate);
       setExerciseName("");
       setSets([{ setNumber: 1, reps: 8, weight: 60 }]);
       setOpen(false);
-      goToToday();
       onUpdate();
     });
   }
@@ -170,19 +152,10 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
 
   // ── Plan log ───────────────────────────────────────────────────
 
-  function buildSetsMap(planId: string, s: "today" | "week", borrow?: string | null): SetsMap {
+  function buildSetsMap(planId: string, borrow?: string | null): SetsMap {
+    if (!borrow) return {};
     const plan = plans.find((p) => p.id === planId);
     if (!plan) return {};
-    if (s === "week") {
-      const map: SetsMap = {};
-      for (const planDay of plan.days) {
-        for (const ex of planDay.exercises) {
-          map[setsKey(planDay.day, ex)] = defaultSets();
-        }
-      }
-      return map;
-    }
-    if (!borrow) return {};
     const planDay = plan.days.find((d) => d.day === borrow);
     if (!planDay) return {};
     const map: SetsMap = {};
@@ -192,44 +165,32 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
     return map;
   }
 
-  function todayDefaultBorrow(planId: string): string | null {
+  function defaultBorrowForDate(planId: string, date: string): string | null {
+    const dayName = JS_DAY_NAMES[new Date(date + "T00:00:00").getDay()];
     const plan = plans.find((p) => p.id === planId);
-    return plan?.days.find((d) => d.day === todayDayName)?.day ?? null;
+    return plan?.days.find((d) => d.day === dayName)?.day ?? null;
   }
 
   function openPlanSheet() {
     const first = plans[0];
     if (!first) return;
-    const borrow = todayDefaultBorrow(first.id);
+    const borrow = defaultBorrowForDate(first.id, selectedDate);
     setSelectedPlanId(first.id);
-    setScope("today");
     setBorrowDay(borrow);
-    setSetsMap(buildSetsMap(first.id, "today", borrow));
+    setSetsMap(buildSetsMap(first.id, borrow));
     setPlanOpen(true);
   }
 
   function handlePlanSelect(planId: string) {
-    const borrow = todayDefaultBorrow(planId);
+    const borrow = defaultBorrowForDate(planId, selectedDate);
     setSelectedPlanId(planId);
     setBorrowDay(borrow);
-    setSetsMap(scope === "today" ? buildSetsMap(planId, "today", borrow) : buildSetsMap(planId, "week"));
-  }
-
-  function handleScopeChange(s: "today" | "week") {
-    setScope(s);
-    if (s === "today") {
-      const borrow = todayDefaultBorrow(selectedPlanId);
-      setBorrowDay(borrow);
-      setSetsMap(buildSetsMap(selectedPlanId, "today", borrow));
-    } else {
-      setBorrowDay(null);
-      setSetsMap(buildSetsMap(selectedPlanId, "week"));
-    }
+    setSetsMap(buildSetsMap(planId, borrow));
   }
 
   function handleBorrowDaySelect(day: string) {
     setBorrowDay(day);
-    setSetsMap(buildSetsMap(selectedPlanId, "today", day));
+    setSetsMap(buildSetsMap(selectedPlanId, day));
   }
 
   function addExSet(day: string, ex: string) {
@@ -260,40 +221,22 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
     e.preventDefault();
     const plan = plans.find((p) => p.id === selectedPlanId);
     if (!plan) return;
-    const weekDates = getWeekDates();
+    const sourceDay = borrowDay ?? selectedDayName;
+    const planDay = plan.days.find((d) => d.day === sourceDay);
+    if (!planDay) return;
     const entries: Array<{ exerciseName: string; sets: WorkoutSet[]; date: string }> = [];
-    if (scope === "today") {
-      const sourceDay = borrowDay ?? todayDayName;
-      const planDay = plan.days.find((d) => d.day === sourceDay);
-      if (!planDay) return;
-      for (const ex of planDay.exercises) {
-        const exSets = setsMap[setsKey(sourceDay, ex)];
-        if (exSets?.length) entries.push({ exerciseName: ex, sets: exSets, date: today });
-      }
-    } else {
-      for (const day of plan.days) {
-        const date = weekDates[day.day] ?? today;
-        for (const ex of day.exercises) {
-          const exSets = setsMap[setsKey(day.day, ex)];
-          if (exSets?.length) entries.push({ exerciseName: ex, sets: exSets, date });
-        }
-      }
+    for (const ex of planDay.exercises) {
+      const exSets = setsMap[setsKey(sourceDay, ex)];
+      if (exSets?.length) entries.push({ exerciseName: ex, sets: exSets, date: selectedDate });
     }
     startTransition(async () => {
       await logWorkoutsBatch(userId, entries);
       setPlanOpen(false);
-      goToToday();
       onUpdate();
     });
   }
 
   // ── Calendar ───────────────────────────────────────────────────
-
-  function goToToday() {
-    const d = new Date();
-    setSelectedDate(today);
-    setDisplayMonth({ year: d.getFullYear(), month: d.getMonth() });
-  }
 
   const { year, month } = displayMonth;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -308,6 +251,7 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
   // ── Derived ────────────────────────────────────────────────────
 
   const selectedLabel = selectedDate === today ? "Today" : fmtDate(selectedDate);
+  const selectedDayName = JS_DAY_NAMES[new Date(selectedDate + "T00:00:00").getDay()];
   const filteredLog = log.filter((e) => e.date === selectedDate);
   const grouped = filteredLog.reduce<Record<string, WorkoutLogEntry[]>>((acc, e) => {
     acc[e.exerciseName] = acc[e.exerciseName] ?? [];
@@ -315,8 +259,19 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
     return acc;
   }, {});
 
+  const lastSessionByExercise = log
+    .filter((e) => e.date < selectedDate)
+    .reduce<Record<string, { date: string; sets: WorkoutSet[] }>>((acc, e) => {
+      const prev = acc[e.exerciseName];
+      if (!prev || e.date > prev.date) {
+        acc[e.exerciseName] = { date: e.date, sets: [...e.sets] };
+      } else if (e.date === prev.date) {
+        acc[e.exerciseName] = { date: prev.date, sets: [...prev.sets, ...e.sets] };
+      }
+      return acc;
+    }, {});
+
   const selectedPlan = plans.find((p) => p.id === selectedPlanId);
-  const weekDates = getWeekDates();
   const activeTodaySource = borrowDay
     ? (selectedPlan?.days.find((d) => d.day === borrowDay) ?? null)
     : null;
@@ -355,7 +310,7 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
         {/* ── Ad-hoc dialog ──────────────────────────────────── */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Log Exercise</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Log Exercise — {selectedLabel}</DialogTitle></DialogHeader>
             <form onSubmit={handleLog} className="space-y-4 mt-2">
               <div className="space-y-1.5">
                 <Label>Exercise</Label>
@@ -371,8 +326,8 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
                 {sets.map((set, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground w-5 text-right shrink-0">{set.setNumber}</span>
-                    <Input type="number" min={1} value={set.reps} onChange={(e) => updateSet(idx, "reps", parseInt(e.target.value))} className="w-20" placeholder="Reps" />
-                    <Input type="number" min={0} step="2.5" value={set.weight} onChange={(e) => updateSet(idx, "weight", parseFloat(e.target.value))} className="w-20" placeholder="kg" />
+                    <Input type="number" min={1} value={set.reps} onChange={(e) => updateSet(idx, "reps", parseInt(e.target.value) || 0)} className="w-20" placeholder="Reps" />
+                    <Input type="number" min={0} step="2.5" value={set.weight} onChange={(e) => updateSet(idx, "weight", parseFloat(e.target.value) || 0)} className="w-20" placeholder="kg" />
                     <span className="text-xs text-muted-foreground shrink-0">kg</span>
                     {sets.length > 1 && (
                       <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeSet(idx)}>
@@ -402,8 +357,8 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
                 {editSets.map((set, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground w-5 text-right shrink-0">{set.setNumber}</span>
-                    <Input type="number" min={1} value={set.reps} onChange={(e) => updateEditSet(idx, "reps", parseInt(e.target.value))} className="w-20" placeholder="Reps" />
-                    <Input type="number" min={0} step="2.5" value={set.weight} onChange={(e) => updateEditSet(idx, "weight", parseFloat(e.target.value))} className="w-20" placeholder="kg" />
+                    <Input type="number" min={1} value={set.reps} onChange={(e) => updateEditSet(idx, "reps", parseInt(e.target.value) || 0)} className="w-20" placeholder="Reps" />
+                    <Input type="number" min={0} step="2.5" value={set.weight} onChange={(e) => updateEditSet(idx, "weight", parseFloat(e.target.value) || 0)} className="w-20" placeholder="kg" />
                     <span className="text-xs text-muted-foreground shrink-0">kg</span>
                     {editSets.length > 1 && (
                       <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeEditSet(idx)}>
@@ -457,124 +412,59 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
                   </div>
                 )}
 
-                {/* Scope toggle */}
-                <div className="space-y-2">
-                  <Label>Scope</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["today", "week"] as const).map((s) => (
+                {/* Exercise configuration */}
+                <div className="space-y-4">
+                  {/* Day picker — always visible so the user can swap to any plan day */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedPlan?.days.map((planDay) => (
                       <button
-                        key={s}
+                        key={planDay.day}
                         type="button"
-                        onClick={() => handleScopeChange(s)}
+                        onClick={() => handleBorrowDaySelect(planDay.day)}
                         className={[
-                          "py-3 rounded-xl text-sm font-semibold border transition-all leading-none",
-                          scope === s
+                          "flex flex-col items-center px-3 py-2 rounded-xl border text-xs font-medium transition-all",
+                          borrowDay === planDay.day
                             ? "bg-primary text-primary-foreground border-primary shadow-sm"
                             : "bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:text-foreground",
                         ].join(" ")}
                       >
-                        {s === "today" ? (
-                          <span className="flex flex-col items-center gap-0.5">
-                            <span>Today</span>
-                            <span className="text-[11px] font-normal opacity-70">{todayDayName}</span>
-                          </span>
-                        ) : (
-                          <span className="flex flex-col items-center gap-0.5">
-                            <span>This Week</span>
-                            <span className="text-[11px] font-normal opacity-70">
-                              {selectedPlan?.days.length ?? 0} training days
-                            </span>
-                          </span>
-                        )}
+                        <span>{planDay.day.slice(0, 3)}</span>
+                        <span className="text-[10px] font-normal opacity-70 mt-0.5">
+                          {planDay.label ?? `${planDay.exercises.length} ex`}
+                        </span>
                       </button>
                     ))}
                   </div>
-                </div>
 
-                <Separator />
-
-                {/* Exercise configuration */}
-                {scope === "today" ? (
-                  <div className="space-y-4">
-                    {/* Day picker — always visible so the user can swap to any plan day */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedPlan?.days.map((planDay) => (
-                        <button
-                          key={planDay.day}
-                          type="button"
-                          onClick={() => handleBorrowDaySelect(planDay.day)}
-                          className={[
-                            "flex flex-col items-center px-3 py-2 rounded-xl border text-xs font-medium transition-all",
-                            borrowDay === planDay.day
-                              ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                              : "bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:text-foreground",
-                          ].join(" ")}
-                        >
-                          <span>{planDay.day.slice(0, 3)}</span>
-                          <span className="text-[10px] font-normal opacity-70 mt-0.5">
-                            {planDay.label ?? `${planDay.exercises.length} ex`}
-                          </span>
-                        </button>
+                  {activeTodaySource && borrowDay ? (
+                    <div className="space-y-3">
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-sm font-semibold">{borrowDay}</p>
+                        {activeTodaySource.label && (
+                          <span className="text-xs font-medium text-primary">{activeTodaySource.label}</span>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {activeTodaySource.exercises.length} exercise{activeTodaySource.exercises.length !== 1 ? "s" : ""}
+                          {borrowDay !== selectedDayName && ` · logged for ${selectedLabel.toLowerCase()}`}
+                        </p>
+                      </div>
+                      {activeTodaySource.exercises.map((ex) => (
+                        <ExerciseSetEditor
+                          key={ex}
+                          exerciseName={ex}
+                          sets={setsMap[setsKey(borrowDay, ex)] ?? []}
+                          onAdd={() => addExSet(borrowDay, ex)}
+                          onRemove={(i) => removeExSet(borrowDay, ex, i)}
+                          onUpdate={(i, f, v) => updateExSet(borrowDay, ex, i, f, v)}
+                        />
                       ))}
                     </div>
-
-                    {activeTodaySource && borrowDay ? (
-                      <div className="space-y-3">
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-sm font-semibold">{borrowDay}</p>
-                          {activeTodaySource.label && (
-                            <span className="text-xs font-medium text-primary">{activeTodaySource.label}</span>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {activeTodaySource.exercises.length} exercise{activeTodaySource.exercises.length !== 1 ? "s" : ""}
-                            {borrowDay !== todayDayName && " · logged for today"}
-                          </p>
-                        </div>
-                        {activeTodaySource.exercises.map((ex) => (
-                          <ExerciseSetEditor
-                            key={ex}
-                            exerciseName={ex}
-                            sets={setsMap[setsKey(borrowDay, ex)] ?? []}
-                            onAdd={() => addExSet(borrowDay, ex)}
-                            onRemove={(i) => removeExSet(borrowDay, ex, i)}
-                            onUpdate={(i, f, v) => updateExSet(borrowDay, ex, i, f, v)}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        Pick a day above to load exercises for today.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {selectedPlan?.days.map((day) => {
-                      const date = weekDates[day.day];
-                      return (
-                        <div key={day.day} className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                            <p className="text-sm font-semibold">{day.day}</p>
-                            {date && (
-                              <span className="text-xs text-muted-foreground">{fmtDate(date)}</span>
-                            )}
-                          </div>
-                          {day.exercises.map((ex) => (
-                            <ExerciseSetEditor
-                              key={ex}
-                              exerciseName={ex}
-                              sets={setsMap[setsKey(day.day, ex)] ?? []}
-                              onAdd={() => addExSet(day.day, ex)}
-                              onRemove={(i) => removeExSet(day.day, ex, i)}
-                              onUpdate={(i, f, v) => updateExSet(day.day, ex, i, f, v)}
-                            />
-                          ))}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Pick a day above to load exercises for today.
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Sticky footer */}
@@ -582,13 +472,9 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={isPending || (scope === "today" && !activeTodaySource)}
+                  disabled={isPending || !activeTodaySource}
                 >
-                  {isPending
-                    ? "Logging…"
-                    : scope === "today"
-                    ? `Log Today's Workout`
-                    : "Log This Week"}
+                  {isPending ? "Logging…" : `Log for ${selectedLabel}`}
                 </Button>
               </div>
             </form>
@@ -601,7 +487,7 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
             <p className="text-sm font-medium text-muted-foreground">
               No exercises logged for {selectedLabel.toLowerCase()}.
             </p>
-            {plans.length > 0 && selectedDate === today && (
+            {plans.length > 0 && (
               <p className="text-xs text-muted-foreground">
                 Use{" "}
                 <button
@@ -665,6 +551,19 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
                       )}
                     </TableBody>
                   </Table>
+                  {(() => {
+                    const prev = lastSessionByExercise[name];
+                    if (!prev) return null;
+                    return (
+                      <div className="mt-3 pt-3 border-t flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                        <span className="text-xs text-muted-foreground">Last · {fmtDate(prev.date)}</span>
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <span className="text-xs font-medium">{prev.sets.length} sets</span>
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <span className="text-xs text-muted-foreground">{prev.sets.map((s) => `${s.weight} kg`).join(" / ")}</span>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ))}
@@ -703,15 +602,18 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
                 const dateStr = isValid ? isoDate(dayNum) : "";
                 const isToday = dateStr === today;
                 const isSelected = dateStr === selectedDate;
+                const isFuture = isValid && dateStr > today;
                 const hasEntry = isValid && datesWithEntries.has(dateStr);
                 return (
                   <div key={i} className="flex flex-col items-center py-0.5">
                     {isValid ? (
                       <button
-                        onClick={() => setSelectedDate(dateStr)}
+                        onClick={() => !isFuture && setSelectedDate(dateStr)}
+                        disabled={isFuture}
                         className={[
                           "relative w-8 h-8 rounded-full text-xs font-medium flex items-center justify-center transition-colors",
                           isSelected ? "bg-primary text-primary-foreground"
+                            : isFuture ? "text-muted-foreground/40 cursor-default"
                             : isToday ? "ring-1 ring-primary text-primary"
                             : "hover:bg-muted text-foreground",
                         ].join(" ")}
@@ -756,13 +658,13 @@ function ExerciseSetEditor({ exerciseName, sets, onAdd, onRemove, onUpdate }: Ed
             <span className="text-xs text-muted-foreground w-5 text-right shrink-0">{set.setNumber}</span>
             <Input
               type="number" min={1} value={set.reps}
-              onChange={(e) => onUpdate(i, "reps", parseInt(e.target.value))}
+              onChange={(e) => onUpdate(i, "reps", parseInt(e.target.value) || 0)}
               className="w-16 h-8 text-sm text-center px-1"
             />
             <span className="text-xs text-muted-foreground shrink-0">reps</span>
             <Input
               type="number" min={0} step="2.5" value={set.weight}
-              onChange={(e) => onUpdate(i, "weight", parseFloat(e.target.value))}
+              onChange={(e) => onUpdate(i, "weight", parseFloat(e.target.value) || 0)}
               className="w-20 h-8 text-sm text-center px-1"
             />
             <span className="text-xs text-muted-foreground shrink-0">kg</span>

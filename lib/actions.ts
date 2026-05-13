@@ -1,48 +1,144 @@
 "use server";
 
-import {
-  addFoodEntry,
-  addNutritionPlan,
-  updateNutritionPlan,
-  addWaterEntry,
-  addWorkoutLogEntry,
-  addWorkoutPlan,
-  deleteFoodEntry,
-  deleteFoodEntriesForDate,
-  deleteNutritionPlan,
-  deleteWaterEntry,
-  deleteWorkoutLogEntry,
-  deleteWorkoutLogEntriesForDate,
-  deleteWorkoutPlan,
-  updateWorkoutPlan,
-  getAllUsers,
-  getFoodLog,
-  getNutritionPlans,
-  getSettings,
-  getUser,
-  getWaterLog,
-  getWorkoutLog,
-  getWorkoutPlans,
-  updateSettings,
-  updateUser,
-  updateWorkoutLogEntry as updateWorkoutLogEntryInStore,
-} from "./mock-store";
+import { createHash } from "crypto";
+import { prisma } from "./db";
 import { calcMacros } from "./calculations";
-import {
+import type {
+  ActivityLevel,
   FoodEntry,
+  FoodSearchResult,
+  FoodUnit,
   GlobalSettings,
+  Goal,
   MacroTargets,
+  MealType,
   NutritionPlan,
   NutritionPlanMeal,
   PhysicalMetrics,
   PlanningMode,
+  TDEEFormula,
   UserProfile,
+  UserRole,
+  UserStatus,
   WaterEntry,
   WorkoutDay,
   WorkoutLogEntry,
   WorkoutPlan,
   WorkoutSet,
 } from "./types";
+import type {
+  Prisma,
+  User as DbUser,
+  FoodEntry as DbFoodEntry,
+  WaterEntry as DbWaterEntry,
+  NutritionPlan as DbNutritionPlan,
+  WorkoutPlan as DbWorkoutPlan,
+  WorkoutLogEntry as DbWorkoutLogEntry,
+  FoodCache as DbFoodCache,
+} from "@/generated/prisma/client";
+
+// ---------------------------------------------------------------------------
+// Mappers — Prisma row → app type
+// ---------------------------------------------------------------------------
+
+function toUserProfile(u: DbUser): UserProfile {
+  const hasMetrics =
+    u.weight != null && u.height != null && u.age != null &&
+    u.activityLevel != null && u.goal != null;
+  const hasMacros =
+    u.targetCalories != null && u.targetProtein != null &&
+    u.targetCarbs != null && u.targetFat != null;
+  return {
+    id: u.id,
+    email: u.email ?? undefined,
+    username: u.username,
+    role: u.role as UserRole,
+    status: u.status as UserStatus,
+    planningMode: u.planningMode as PlanningMode,
+    onboardingComplete: u.onboardingComplete,
+    metrics: hasMetrics ? {
+      weight: u.weight!,
+      height: u.height!,
+      age: u.age!,
+      activityLevel: u.activityLevel as ActivityLevel,
+      goal: u.goal as Goal,
+    } : null,
+    macroTargets: hasMacros ? {
+      calories: u.targetCalories!,
+      protein: u.targetProtein!,
+      carbs: u.targetCarbs!,
+      fat: u.targetFat!,
+    } : null,
+  };
+}
+
+function toFoodEntry(e: DbFoodEntry): FoodEntry {
+  return {
+    id: e.id,
+    userId: e.userId,
+    date: e.date,
+    name: e.name,
+    calories: e.calories,
+    protein: e.protein,
+    carbs: e.carbs,
+    fat: e.fat,
+    mealType: e.mealType as MealType,
+    createdAt: e.createdAt.toISOString(),
+  };
+}
+
+function toWaterEntry(e: DbWaterEntry): WaterEntry {
+  return {
+    id: e.id,
+    userId: e.userId,
+    date: e.date,
+    amountMl: e.amountMl,
+    createdAt: e.createdAt.toISOString(),
+  };
+}
+
+function toNutritionPlan(p: DbNutritionPlan): NutritionPlan {
+  return {
+    id: p.id,
+    userId: p.userId,
+    name: p.name,
+    meals: p.meals as unknown as NutritionPlanMeal[],
+    createdAt: p.createdAt.toISOString(),
+  };
+}
+
+function toWorkoutPlan(p: DbWorkoutPlan): WorkoutPlan {
+  return {
+    id: p.id,
+    userId: p.userId,
+    name: p.name,
+    days: p.days as unknown as WorkoutDay[],
+    createdAt: p.createdAt.toISOString(),
+  };
+}
+
+function toWorkoutLogEntry(e: DbWorkoutLogEntry): WorkoutLogEntry {
+  return {
+    id: e.id,
+    userId: e.userId,
+    date: e.date,
+    exerciseId: e.exerciseId,
+    exerciseName: e.exerciseName,
+    sets: e.sets as unknown as WorkoutSet[],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+export async function loginUser(email: string, password: string): Promise<UserProfile | null> {
+  const passwordHash = createHash("sha256").update(password).digest("hex");
+  const user = await prisma.user.findFirst({ where: { email } });
+  if (!user || user.password !== passwordHash) return null;
+  if (user.status !== "approved") return null;
+  return toUserProfile(user);
+}
 
 // ---------------------------------------------------------------------------
 // Profile / onboarding
@@ -52,39 +148,77 @@ export async function saveGuidedProfile(
   userId: string,
   metrics: PhysicalMetrics,
   formula: GlobalSettings["tdeeFormula"]
-) {
+): Promise<UserProfile> {
   const macroTargets = calcMacros(metrics, formula);
-  return updateUser(userId, {
-    metrics,
-    macroTargets,
-    planningMode: "guided",
-    onboardingComplete: true,
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      planningMode: "guided",
+      onboardingComplete: true,
+      weight: metrics.weight,
+      height: metrics.height,
+      age: metrics.age,
+      activityLevel: metrics.activityLevel,
+      goal: metrics.goal,
+      targetCalories: macroTargets.calories,
+      targetProtein: macroTargets.protein,
+      targetCarbs: macroTargets.carbs,
+      targetFat: macroTargets.fat,
+    },
   });
+  return toUserProfile(updated);
 }
 
 export async function saveManualProfile(
   userId: string,
   metrics: PhysicalMetrics,
   macroTargets: MacroTargets
-) {
-  return updateUser(userId, {
-    metrics,
-    macroTargets,
-    planningMode: "manual",
-    onboardingComplete: true,
+): Promise<UserProfile> {
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      planningMode: "manual",
+      onboardingComplete: true,
+      weight: metrics.weight,
+      height: metrics.height,
+      age: metrics.age,
+      activityLevel: metrics.activityLevel,
+      goal: metrics.goal,
+      targetCalories: macroTargets.calories,
+      targetProtein: macroTargets.protein,
+      targetCarbs: macroTargets.carbs,
+      targetFat: macroTargets.fat,
+    },
   });
+  return toUserProfile(updated);
 }
 
-export async function setPlanningMode(userId: string, mode: PlanningMode) {
-  return updateUser(userId, { planningMode: mode });
+export async function setPlanningMode(userId: string, mode: PlanningMode): Promise<UserProfile> {
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { planningMode: mode },
+  });
+  return toUserProfile(updated);
 }
 
 // ---------------------------------------------------------------------------
 // Food log
 // ---------------------------------------------------------------------------
 
-export async function logFood(entry: Omit<FoodEntry, "id" | "createdAt">) {
-  return addFoodEntry(entry);
+export async function logFood(entry: Omit<FoodEntry, "id" | "createdAt">): Promise<FoodEntry> {
+  const created = await prisma.foodEntry.create({
+    data: {
+      userId: entry.userId,
+      date: entry.date,
+      name: entry.name,
+      calories: entry.calories,
+      protein: entry.protein,
+      carbs: entry.carbs,
+      fat: entry.fat,
+      mealType: entry.mealType,
+    },
+  });
+  return toFoodEntry(created);
 }
 
 export async function logFoodsBatch(
@@ -92,17 +226,17 @@ export async function logFoodsBatch(
   date: string,
   foods: Array<Omit<FoodEntry, "id" | "createdAt" | "userId" | "date">>
 ): Promise<void> {
-  for (const food of foods) {
-    addFoodEntry({ ...food, userId, date });
-  }
+  await prisma.foodEntry.createMany({
+    data: foods.map((f) => ({ userId, date, ...f })),
+  });
 }
 
-export async function removeFood(id: string) {
-  deleteFoodEntry(id);
+export async function removeFood(id: string): Promise<void> {
+  await prisma.foodEntry.delete({ where: { id } });
 }
 
-export async function clearFoodLogForDate(userId: string, date: string) {
-  deleteFoodEntriesForDate(userId, date);
+export async function clearFoodLogForDate(userId: string, date: string): Promise<void> {
+  await prisma.foodEntry.deleteMany({ where: { userId, date } });
 }
 
 // ---------------------------------------------------------------------------
@@ -110,11 +244,12 @@ export async function clearFoodLogForDate(userId: string, date: string) {
 // ---------------------------------------------------------------------------
 
 export async function logWater(userId: string, date: string, amountMl: number): Promise<WaterEntry> {
-  return addWaterEntry({ userId, date, amountMl });
+  const created = await prisma.waterEntry.create({ data: { userId, date, amountMl } });
+  return toWaterEntry(created);
 }
 
 export async function removeWater(id: string): Promise<void> {
-  deleteWaterEntry(id);
+  await prisma.waterEntry.delete({ where: { id } });
 }
 
 // ---------------------------------------------------------------------------
@@ -126,7 +261,8 @@ export async function createNutritionPlan(
   name: string,
   meals: NutritionPlanMeal[]
 ): Promise<NutritionPlan> {
-  return addNutritionPlan({ userId, name, meals });
+  const created = await prisma.nutritionPlan.create({ data: { userId, name, meals: meals as unknown as Prisma.InputJsonValue } });
+  return toNutritionPlan(created);
 }
 
 export async function editNutritionPlan(
@@ -134,11 +270,12 @@ export async function editNutritionPlan(
   name: string,
   meals: NutritionPlanMeal[]
 ): Promise<NutritionPlan> {
-  return updateNutritionPlan(id, { name, meals });
+  const updated = await prisma.nutritionPlan.update({ where: { id }, data: { name, meals: meals as unknown as Prisma.InputJsonValue } });
+  return toNutritionPlan(updated);
 }
 
 export async function removeNutritionPlan(id: string): Promise<void> {
-  deleteNutritionPlan(id);
+  await prisma.nutritionPlan.delete({ where: { id } });
 }
 
 // ---------------------------------------------------------------------------
@@ -149,8 +286,9 @@ export async function createWorkoutPlan(
   userId: string,
   name: string,
   days: WorkoutDay[]
-) {
-  return addWorkoutPlan({ userId, name, days });
+): Promise<WorkoutPlan> {
+  const created = await prisma.workoutPlan.create({ data: { userId, name, days: days as unknown as Prisma.InputJsonValue } });
+  return toWorkoutPlan(created);
 }
 
 export async function editWorkoutPlan(
@@ -158,11 +296,12 @@ export async function editWorkoutPlan(
   name: string,
   days: WorkoutDay[]
 ): Promise<WorkoutPlan> {
-  return updateWorkoutPlan(id, { name, days });
+  const updated = await prisma.workoutPlan.update({ where: { id }, data: { name, days: days as unknown as Prisma.InputJsonValue } });
+  return toWorkoutPlan(updated);
 }
 
-export async function removeWorkoutPlan(id: string) {
-  deleteWorkoutPlan(id);
+export async function removeWorkoutPlan(id: string): Promise<void> {
+  await prisma.workoutPlan.delete({ where: { id } });
 }
 
 // ---------------------------------------------------------------------------
@@ -172,88 +311,307 @@ export async function removeWorkoutPlan(id: string) {
 export async function logWorkout(
   userId: string,
   exerciseName: string,
-  sets: WorkoutSet[]
-) {
-  const entry: Omit<WorkoutLogEntry, "id"> = {
-    userId,
-    date: new Date().toISOString().split("T")[0],
-    exerciseId: `e_${exerciseName.toLowerCase().replace(/\s+/g, "_")}`,
-    exerciseName,
-    sets,
-  };
-  return addWorkoutLogEntry(entry);
+  sets: WorkoutSet[],
+  date: string
+): Promise<WorkoutLogEntry> {
+  const created = await prisma.workoutLogEntry.create({
+    data: {
+      userId,
+      date,
+      exerciseId: `e_${exerciseName.toLowerCase().replace(/\s+/g, "_")}`,
+      exerciseName,
+      sets: sets as unknown as Prisma.InputJsonValue,
+    },
+  });
+  return toWorkoutLogEntry(created);
 }
 
-export async function removeWorkoutLogEntry(id: string) {
-  deleteWorkoutLogEntry(id);
+export async function removeWorkoutLogEntry(id: string): Promise<void> {
+  await prisma.workoutLogEntry.delete({ where: { id } });
 }
 
-export async function clearWorkoutLogForDate(userId: string, date: string) {
-  deleteWorkoutLogEntriesForDate(userId, date);
+export async function clearWorkoutLogForDate(userId: string, date: string): Promise<void> {
+  await prisma.workoutLogEntry.deleteMany({ where: { userId, date } });
 }
 
 export async function updateWorkoutLogEntry(id: string, sets: WorkoutSet[]): Promise<WorkoutLogEntry | null> {
-  return updateWorkoutLogEntryInStore(id, sets);
+  try {
+    const updated = await prisma.workoutLogEntry.update({ where: { id }, data: { sets: sets as unknown as Prisma.InputJsonValue } });
+    return toWorkoutLogEntry(updated);
+  } catch {
+    return null;
+  }
 }
 
 export async function logWorkoutsBatch(
   userId: string,
   entries: Array<{ exerciseName: string; sets: WorkoutSet[]; date: string }>
 ): Promise<void> {
-  for (const { exerciseName, sets, date } of entries) {
-    addWorkoutLogEntry({
+  await prisma.workoutLogEntry.createMany({
+    data: entries.map(({ exerciseName, sets, date }) => ({
       userId,
       date,
       exerciseId: `e_${exerciseName.toLowerCase().replace(/\s+/g, "_")}`,
       exerciseName,
-      sets,
-    });
-  }
+      sets: sets as unknown as Prisma.InputJsonValue,
+    })),
+  });
 }
 
 // ---------------------------------------------------------------------------
 // Admin
 // ---------------------------------------------------------------------------
 
-export async function updateGlobalSettings(patch: Partial<GlobalSettings>) {
-  return updateSettings(patch);
+export async function updateGlobalSettings(patch: Partial<GlobalSettings>): Promise<GlobalSettings> {
+  const updated = await prisma.globalSettings.upsert({
+    where: { id: "global" },
+    update: patch,
+    create: { id: "global", tdeeFormula: "mifflin_st_jeor", ...patch },
+  });
+  return { tdeeFormula: updated.tdeeFormula as TDEEFormula };
 }
 
 // ---------------------------------------------------------------------------
-// Read actions — all data reads route through here so client components
-// always read from the server store, not the client-side seed copy.
-// When the DB is added, replace the mock-store calls below with Prisma queries.
+// Read actions
 // ---------------------------------------------------------------------------
 
 export async function fetchUser(userId: string): Promise<UserProfile | undefined> {
-  return getUser(userId);
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  return user ? toUserProfile(user) : undefined;
 }
 
 export async function fetchFoodLog(userId: string, date?: string): Promise<FoodEntry[]> {
-  return getFoodLog(userId, date);
+  const entries = await prisma.foodEntry.findMany({
+    where: { userId, ...(date ? { date } : {}) },
+    orderBy: { createdAt: "asc" },
+  });
+  return entries.map(toFoodEntry);
 }
 
 export async function fetchWaterLog(userId: string, date?: string): Promise<WaterEntry[]> {
-  return getWaterLog(userId, date);
+  const entries = await prisma.waterEntry.findMany({
+    where: { userId, ...(date ? { date } : {}) },
+    orderBy: { createdAt: "asc" },
+  });
+  return entries.map(toWaterEntry);
 }
 
 export async function fetchNutritionPlans(userId: string): Promise<NutritionPlan[]> {
-  return getNutritionPlans(userId);
+  const plans = await prisma.nutritionPlan.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+  return plans.map(toNutritionPlan);
 }
 
 export async function fetchWorkoutPlans(userId: string): Promise<WorkoutPlan[]> {
-  return getWorkoutPlans(userId);
+  const plans = await prisma.workoutPlan.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+  return plans.map(toWorkoutPlan);
 }
 
 export async function fetchWorkoutLog(userId: string, date?: string): Promise<WorkoutLogEntry[]> {
-  return getWorkoutLog(userId, date);
+  const entries = await prisma.workoutLogEntry.findMany({
+    where: { userId, ...(date ? { date } : {}) },
+    orderBy: { createdAt: "asc" },
+  });
+  return entries.map(toWorkoutLogEntry);
 }
 
 export async function fetchSettings(): Promise<GlobalSettings> {
-  return getSettings();
+  const settings = await prisma.globalSettings.findUnique({ where: { id: "global" } });
+  return { tdeeFormula: (settings?.tdeeFormula ?? "mifflin_st_jeor") as TDEEFormula };
 }
 
 export async function fetchAllUsers(): Promise<UserProfile[]> {
-  return getAllUsers();
+  const users = await prisma.user.findMany({ orderBy: { createdAt: "asc" } });
+  return users.map(toUserProfile);
 }
 
+// ---------------------------------------------------------------------------
+// Registration & approval
+// ---------------------------------------------------------------------------
+
+export async function registerUser(
+  email: string,
+  password: string,
+  name: string,
+): Promise<{ success: boolean; error?: string }> {
+  const emailConflict = await prisma.user.findFirst({ where: { email } });
+  if (emailConflict) return { success: false, error: "An account with this email already exists." };
+
+  const username = name.trim().slice(0, 30);
+  const usernameConflict = await prisma.user.findUnique({ where: { username } });
+  if (usernameConflict) return { success: false, error: "This display name is already taken. Please choose another." };
+
+  const passwordHash = createHash("sha256").update(password).digest("hex");
+  await prisma.user.create({
+    data: {
+      email,
+      username,
+      password: passwordHash,
+      role: "user",
+      status: "pending",
+      planningMode: "guided",
+    },
+  });
+  return { success: true };
+}
+
+export async function approveUser(id: string): Promise<void> {
+  await prisma.user.update({ where: { id }, data: { status: "approved" } });
+}
+
+export async function rejectUser(id: string): Promise<void> {
+  await prisma.user.update({ where: { id }, data: { status: "rejected" } });
+}
+
+export async function updateUserRole(id: string, role: UserRole): Promise<void> {
+  await prisma.user.update({ where: { id }, data: { role } });
+}
+
+export async function updateUserStatus(id: string, status: UserStatus): Promise<void> {
+  await prisma.user.update({ where: { id }, data: { status } });
+}
+
+// ---------------------------------------------------------------------------
+// Food search — USDA FoodData Central with local DB cache
+// ---------------------------------------------------------------------------
+
+const USDA_BASE_URL = "https://api.nal.usda.gov/fdc/v1";
+
+interface UsdaNutrient {
+  nutrientId: number;
+  value: number;
+}
+
+interface UsdaFood {
+  fdcId: number;
+  description: string;
+  brandOwner?: string | null;
+  foodNutrients: UsdaNutrient[];
+}
+
+interface UsdaFoodPortion {
+  amount: number;
+  gramWeight: number;
+  sequenceNumber?: number;
+}
+
+interface UsdaFoodDetail {
+  foodPortions?: UsdaFoodPortion[];
+}
+
+interface UsdaSearchResponse {
+  foods?: UsdaFood[];
+}
+
+function toFoodSearchResult(c: DbFoodCache): FoodSearchResult {
+  return {
+    fdcId: c.fdcId,
+    name: c.name,
+    brand: c.brand ?? undefined,
+    calories: c.calories,
+    protein: c.protein,
+    carbs: c.carbs,
+    fat: c.fat,
+    servingUnit: (c.servingUnit as FoodUnit) ?? "g",
+    gramsPerServing: c.gramsPerServing ?? 100,
+  };
+}
+
+function getNutrient(nutrients: UsdaNutrient[], id: number): number {
+  return nutrients.find((n) => n.nutrientId === id)?.value ?? 0;
+}
+
+export async function searchFoods(query: string): Promise<FoodSearchResult[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+
+  const cached = await prisma.foodCache.findMany({
+    where: { name: { contains: q, mode: "insensitive" } },
+    take: 10,
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (cached.length >= 5) return cached.map(toFoodSearchResult);
+
+  const apiKey = process.env.USDA_API_KEY ?? "DEMO_KEY";
+  const params = new URLSearchParams({
+    query: q,
+    pageSize: "10",
+    // SR Legacy and Foundation foods have consistent per-100g macro data
+    dataType: "SR Legacy,Foundation",
+    api_key: apiKey,
+  });
+
+  try {
+    const res = await fetch(`${USDA_BASE_URL}/foods/search?${params}`);
+    if (!res.ok) return cached.map(toFoodSearchResult);
+
+    const data = (await res.json()) as UsdaSearchResponse;
+    const usdaFoods = data.foods ?? [];
+
+    const newEntries = usdaFoods.map((food) => ({
+      fdcId: food.fdcId,
+      name: food.description,
+      brand: food.brandOwner ?? null,
+      calories: getNutrient(food.foodNutrients, 1008),
+      protein: getNutrient(food.foodNutrients, 1003),
+      carbs: getNutrient(food.foodNutrients, 1005),
+      fat: getNutrient(food.foodNutrients, 1004),
+      servingUnit: "g",
+      gramsPerServing: 100,
+    }));
+
+    if (newEntries.length > 0) {
+      await prisma.foodCache.createMany({ data: newEntries, skipDuplicates: true });
+    }
+
+    const cachedIds = new Set(cached.map((c) => c.fdcId));
+    const merged: FoodSearchResult[] = [
+      ...cached.map(toFoodSearchResult),
+      ...newEntries
+        .filter((e) => !cachedIds.has(e.fdcId))
+        .map((e) => ({ ...e, brand: e.brand ?? undefined, servingUnit: "g" as FoodUnit })),
+    ];
+    return merged.slice(0, 10);
+  } catch {
+    return cached.map(toFoodSearchResult);
+  }
+}
+
+export async function fetchFoodPortionSize(fdcId: number): Promise<number | null> {
+  const cached = await prisma.foodCache.findUnique({ where: { fdcId } });
+  if (cached && cached.gramsPerServing !== 100) return cached.gramsPerServing;
+
+  const apiKey = process.env.USDA_API_KEY ?? "DEMO_KEY";
+  try {
+    const res = await fetch(`${USDA_BASE_URL}/food/${fdcId}?api_key=${apiKey}`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as UsdaFoodDetail;
+    const sorted = (data.foodPortions ?? [])
+      .filter((p) => p.amount > 0 && p.gramWeight > 0)
+      .sort((a, b) => (a.sequenceNumber ?? 99) - (b.sequenceNumber ?? 99));
+    const portion = sorted[0];
+    if (!portion) return null;
+    const gramsPerServing = Math.round(portion.gramWeight / portion.amount);
+    await prisma.foodCache.updateMany({ where: { fdcId }, data: { gramsPerServing } });
+    return gramsPerServing;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateFoodServing(
+  fdcId: number,
+  servingUnit: FoodUnit,
+  gramsPerServing: number,
+): Promise<void> {
+  await prisma.foodCache.update({
+    where: { fdcId },
+    data: { servingUnit, gramsPerServing },
+  });
+}
