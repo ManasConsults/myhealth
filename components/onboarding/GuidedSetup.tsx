@@ -8,24 +8,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { saveGuidedProfile } from "@/lib/actions";
 import { useAuth } from "@/lib/auth-context";
-import { ActivityLevel, BiologicalSex, Goal, TDEEFormula } from "@/lib/types";
+import { ActivityLevel, BiologicalSex, Goal, PhysicalMetrics, TDEEFormula } from "@/lib/types";
 import { calcMacros, calcTDEE } from "@/lib/calculations";
 
 interface Props {
   formula: TDEEFormula;
   onComplete: () => void;
+  initialValues?: PhysicalMetrics;
 }
 
-export function GuidedSetup({ formula, onComplete }: Props) {
+export function GuidedSetup({ formula, onComplete, initialValues }: Props) {
   const { user, refreshUser } = useAuth();
   const [isPending, startTransition] = useTransition();
 
-  const [weight, setWeight] = useState("70");
-  const [height, setHeight] = useState("170");
-  const [age, setAge] = useState("25");
-  const [biologicalSex, setBiologicalSex] = useState<BiologicalSex>("male");
-  const [goal, setGoal] = useState<Goal>("maintenance");
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel>("moderate");
+  const [weight, setWeight] = useState(initialValues ? String(initialValues.weight) : "70");
+  const [height, setHeight] = useState(initialValues ? String(initialValues.height) : "170");
+  const [age, setAge] = useState(initialValues ? String(initialValues.age) : "25");
+  const [biologicalSex, setBiologicalSex] = useState<BiologicalSex>(initialValues?.biologicalSex ?? "male");
+  const [goal, setGoal] = useState<Goal>(initialValues?.goal ?? "maintenance");
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(initialValues?.activityLevel ?? "moderate");
 
   const metrics = {
     weight: parseFloat(weight) || 0,

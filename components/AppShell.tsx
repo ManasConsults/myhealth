@@ -13,7 +13,7 @@ import {
   Dumbbell,
   LayoutDashboard,
   LogOut,
-  Settings,
+  UserCircle,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,7 @@ const NAV: NavItem[] = [
   { href: "/dashboard/nutrition", label: "Nutrition", icon: Apple },
   { href: "/dashboard/workout", label: "Workout", icon: Dumbbell },
   { href: "/dashboard/admin", label: "Admin", icon: Users, adminOnly: true },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -70,10 +70,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mt-auto space-y-2 pt-4">
           <Separator />
           <div className="flex items-center justify-between px-2 py-1">
-            <div className="min-w-0">
+            <Link href="/dashboard/profile" className="min-w-0 hover:opacity-70 transition-opacity">
               <p className="text-xs font-semibold truncate">{user?.username}</p>
               <Badge variant="secondary" className="text-[10px] mt-0.5 capitalize px-1.5 py-0">{user?.role}</Badge>
-            </div>
+            </Link>
             <ThemeToggle />
           </div>
           <Button

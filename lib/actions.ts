@@ -57,6 +57,7 @@ function toUserProfile(u: DbUser): UserProfile {
     id: u.id,
     email: u.email ?? undefined,
     username: u.username,
+    fullName: u.fullName ?? undefined,
     role: u.role as UserRole,
     status: u.status as UserStatus,
     planningMode: u.planningMode as PlanningMode,
@@ -225,6 +226,14 @@ export async function setPlanningMode(userId: string, mode: PlanningMode): Promi
   const updated = await prisma.user.update({
     where: { id: userId },
     data: { planningMode: mode },
+  });
+  return toUserProfile(updated);
+}
+
+export async function updateFullName(userId: string, fullName: string): Promise<UserProfile> {
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { fullName: fullName.trim() || null },
   });
   return toUserProfile(updated);
 }

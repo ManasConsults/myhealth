@@ -39,6 +39,7 @@ export interface UserProfile {
   id: string;
   email?: string;
   username: string;
+  fullName?: string;
   role: UserRole;
   status: UserStatus;
   planningMode: PlanningMode;

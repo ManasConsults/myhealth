@@ -68,6 +68,7 @@ model User {
   id                 String         @id @default(cuid())
   email              String?        @unique
   username           String         @unique
+  fullName           String?
   password           String?
   role               UserRole       @default(user)
   planningMode       PlanningMode   @default(guided)
