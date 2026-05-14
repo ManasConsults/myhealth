@@ -56,6 +56,7 @@ export const ModelName = {
   WaterEntry: 'WaterEntry',
   NutritionPlan: 'NutritionPlan',
   WorkoutPlan: 'WorkoutPlan',
+  ExerciseLibrary: 'ExerciseLibrary',
   WorkoutLogEntry: 'WorkoutLogEntry',
   GlobalSettings: 'GlobalSettings',
   FoodCache: 'FoodCache'
@@ -88,6 +89,7 @@ export const UserScalarFieldEnum = {
   weight: 'weight',
   height: 'height',
   age: 'age',
+  biologicalSex: 'biologicalSex',
   activityLevel: 'activityLevel',
   goal: 'goal',
   targetCalories: 'targetCalories',
@@ -151,12 +153,25 @@ export const WorkoutPlanScalarFieldEnum = {
 export type WorkoutPlanScalarFieldEnum = (typeof WorkoutPlanScalarFieldEnum)[keyof typeof WorkoutPlanScalarFieldEnum]
 
 
+export const ExerciseLibraryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  muscleGroup: 'muscleGroup',
+  type: 'type',
+  instructions: 'instructions',
+  createdAt: 'createdAt'
+} as const
+
+export type ExerciseLibraryScalarFieldEnum = (typeof ExerciseLibraryScalarFieldEnum)[keyof typeof ExerciseLibraryScalarFieldEnum]
+
+
 export const WorkoutLogEntryScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   date: 'date',
   exerciseId: 'exerciseId',
   exerciseName: 'exerciseName',
+  exerciseLibraryId: 'exerciseLibraryId',
   sets: 'sets',
   createdAt: 'createdAt'
 } as const

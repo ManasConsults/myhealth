@@ -28,9 +28,19 @@ export function MacroDonut({ slices, center, size = 120 }: Props) {
     return seg;
   });
 
+  const label = slices
+    .map((sl) => `${sl.label}: ${sl.value}g`)
+    .join(", ");
+
   return (
     <div className="flex flex-col items-center gap-2">
-      <svg width={size} height={size} viewBox="0 0 100 100">
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        role="img"
+        aria-label={center ? `${center} kcal — ${label}` : label}
+      >
         {total === 0 ? (
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="currentColor" strokeWidth="18" className="text-muted/60" />
         ) : (
@@ -41,11 +51,10 @@ export function MacroDonut({ slices, center, size = 120 }: Props) {
               cy={cy}
               r={r}
               fill="none"
-              stroke={seg.color}
               strokeWidth="18"
               strokeDasharray={`${seg.dash} ${circumference - seg.dash}`}
               strokeDashoffset={-seg.offset + circumference / 4}
-              style={{ transition: "stroke-dasharray 0.5s" }}
+              style={{ stroke: seg.color, transition: "stroke-dasharray 0.5s" }}
             />
           ))
         )}

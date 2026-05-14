@@ -30,6 +30,7 @@ export type WorkoutLogEntryMinAggregateOutputType = {
   date: string | null
   exerciseId: string | null
   exerciseName: string | null
+  exerciseLibraryId: string | null
   createdAt: Date | null
 }
 
@@ -39,6 +40,7 @@ export type WorkoutLogEntryMaxAggregateOutputType = {
   date: string | null
   exerciseId: string | null
   exerciseName: string | null
+  exerciseLibraryId: string | null
   createdAt: Date | null
 }
 
@@ -48,6 +50,7 @@ export type WorkoutLogEntryCountAggregateOutputType = {
   date: number
   exerciseId: number
   exerciseName: number
+  exerciseLibraryId: number
   sets: number
   createdAt: number
   _all: number
@@ -60,6 +63,7 @@ export type WorkoutLogEntryMinAggregateInputType = {
   date?: true
   exerciseId?: true
   exerciseName?: true
+  exerciseLibraryId?: true
   createdAt?: true
 }
 
@@ -69,6 +73,7 @@ export type WorkoutLogEntryMaxAggregateInputType = {
   date?: true
   exerciseId?: true
   exerciseName?: true
+  exerciseLibraryId?: true
   createdAt?: true
 }
 
@@ -78,6 +83,7 @@ export type WorkoutLogEntryCountAggregateInputType = {
   date?: true
   exerciseId?: true
   exerciseName?: true
+  exerciseLibraryId?: true
   sets?: true
   createdAt?: true
   _all?: true
@@ -161,6 +167,7 @@ export type WorkoutLogEntryGroupByOutputType = {
   date: string
   exerciseId: string
   exerciseName: string
+  exerciseLibraryId: string | null
   sets: runtime.JsonValue
   createdAt: Date
   _count: WorkoutLogEntryCountAggregateOutputType | null
@@ -192,9 +199,11 @@ export type WorkoutLogEntryWhereInput = {
   date?: Prisma.StringFilter<"WorkoutLogEntry"> | string
   exerciseId?: Prisma.StringFilter<"WorkoutLogEntry"> | string
   exerciseName?: Prisma.StringFilter<"WorkoutLogEntry"> | string
+  exerciseLibraryId?: Prisma.StringNullableFilter<"WorkoutLogEntry"> | string | null
   sets?: Prisma.JsonFilter<"WorkoutLogEntry">
   createdAt?: Prisma.DateTimeFilter<"WorkoutLogEntry"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  exerciseLibrary?: Prisma.XOR<Prisma.ExerciseLibraryNullableScalarRelationFilter, Prisma.ExerciseLibraryWhereInput> | null
 }
 
 export type WorkoutLogEntryOrderByWithRelationInput = {
@@ -203,9 +212,11 @@ export type WorkoutLogEntryOrderByWithRelationInput = {
   date?: Prisma.SortOrder
   exerciseId?: Prisma.SortOrder
   exerciseName?: Prisma.SortOrder
+  exerciseLibraryId?: Prisma.SortOrderInput | Prisma.SortOrder
   sets?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
+  exerciseLibrary?: Prisma.ExerciseLibraryOrderByWithRelationInput
 }
 
 export type WorkoutLogEntryWhereUniqueInput = Prisma.AtLeast<{
@@ -217,9 +228,11 @@ export type WorkoutLogEntryWhereUniqueInput = Prisma.AtLeast<{
   date?: Prisma.StringFilter<"WorkoutLogEntry"> | string
   exerciseId?: Prisma.StringFilter<"WorkoutLogEntry"> | string
   exerciseName?: Prisma.StringFilter<"WorkoutLogEntry"> | string
+  exerciseLibraryId?: Prisma.StringNullableFilter<"WorkoutLogEntry"> | string | null
   sets?: Prisma.JsonFilter<"WorkoutLogEntry">
   createdAt?: Prisma.DateTimeFilter<"WorkoutLogEntry"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  exerciseLibrary?: Prisma.XOR<Prisma.ExerciseLibraryNullableScalarRelationFilter, Prisma.ExerciseLibraryWhereInput> | null
 }, "id">
 
 export type WorkoutLogEntryOrderByWithAggregationInput = {
@@ -228,6 +241,7 @@ export type WorkoutLogEntryOrderByWithAggregationInput = {
   date?: Prisma.SortOrder
   exerciseId?: Prisma.SortOrder
   exerciseName?: Prisma.SortOrder
+  exerciseLibraryId?: Prisma.SortOrderInput | Prisma.SortOrder
   sets?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.WorkoutLogEntryCountOrderByAggregateInput
@@ -244,6 +258,7 @@ export type WorkoutLogEntryScalarWhereWithAggregatesInput = {
   date?: Prisma.StringWithAggregatesFilter<"WorkoutLogEntry"> | string
   exerciseId?: Prisma.StringWithAggregatesFilter<"WorkoutLogEntry"> | string
   exerciseName?: Prisma.StringWithAggregatesFilter<"WorkoutLogEntry"> | string
+  exerciseLibraryId?: Prisma.StringNullableWithAggregatesFilter<"WorkoutLogEntry"> | string | null
   sets?: Prisma.JsonWithAggregatesFilter<"WorkoutLogEntry">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"WorkoutLogEntry"> | Date | string
 }
@@ -256,6 +271,7 @@ export type WorkoutLogEntryCreateInput = {
   sets: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutWorkoutLogInput
+  exerciseLibrary?: Prisma.ExerciseLibraryCreateNestedOneWithoutLogEntriesInput
 }
 
 export type WorkoutLogEntryUncheckedCreateInput = {
@@ -264,6 +280,7 @@ export type WorkoutLogEntryUncheckedCreateInput = {
   date: string
   exerciseId: string
   exerciseName: string
+  exerciseLibraryId?: string | null
   sets: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
@@ -276,6 +293,7 @@ export type WorkoutLogEntryUpdateInput = {
   sets?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutWorkoutLogNestedInput
+  exerciseLibrary?: Prisma.ExerciseLibraryUpdateOneWithoutLogEntriesNestedInput
 }
 
 export type WorkoutLogEntryUncheckedUpdateInput = {
@@ -284,6 +302,7 @@ export type WorkoutLogEntryUncheckedUpdateInput = {
   date?: Prisma.StringFieldUpdateOperationsInput | string
   exerciseId?: Prisma.StringFieldUpdateOperationsInput | string
   exerciseName?: Prisma.StringFieldUpdateOperationsInput | string
+  exerciseLibraryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sets?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -294,6 +313,7 @@ export type WorkoutLogEntryCreateManyInput = {
   date: string
   exerciseId: string
   exerciseName: string
+  exerciseLibraryId?: string | null
   sets: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
@@ -313,6 +333,7 @@ export type WorkoutLogEntryUncheckedUpdateManyInput = {
   date?: Prisma.StringFieldUpdateOperationsInput | string
   exerciseId?: Prisma.StringFieldUpdateOperationsInput | string
   exerciseName?: Prisma.StringFieldUpdateOperationsInput | string
+  exerciseLibraryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sets?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -333,6 +354,7 @@ export type WorkoutLogEntryCountOrderByAggregateInput = {
   date?: Prisma.SortOrder
   exerciseId?: Prisma.SortOrder
   exerciseName?: Prisma.SortOrder
+  exerciseLibraryId?: Prisma.SortOrder
   sets?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -343,6 +365,7 @@ export type WorkoutLogEntryMaxOrderByAggregateInput = {
   date?: Prisma.SortOrder
   exerciseId?: Prisma.SortOrder
   exerciseName?: Prisma.SortOrder
+  exerciseLibraryId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -352,6 +375,7 @@ export type WorkoutLogEntryMinOrderByAggregateInput = {
   date?: Prisma.SortOrder
   exerciseId?: Prisma.SortOrder
   exerciseName?: Prisma.SortOrder
+  exerciseLibraryId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -397,6 +421,48 @@ export type WorkoutLogEntryUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.WorkoutLogEntryScalarWhereInput | Prisma.WorkoutLogEntryScalarWhereInput[]
 }
 
+export type WorkoutLogEntryCreateNestedManyWithoutExerciseLibraryInput = {
+  create?: Prisma.XOR<Prisma.WorkoutLogEntryCreateWithoutExerciseLibraryInput, Prisma.WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput> | Prisma.WorkoutLogEntryCreateWithoutExerciseLibraryInput[] | Prisma.WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput[]
+  connectOrCreate?: Prisma.WorkoutLogEntryCreateOrConnectWithoutExerciseLibraryInput | Prisma.WorkoutLogEntryCreateOrConnectWithoutExerciseLibraryInput[]
+  createMany?: Prisma.WorkoutLogEntryCreateManyExerciseLibraryInputEnvelope
+  connect?: Prisma.WorkoutLogEntryWhereUniqueInput | Prisma.WorkoutLogEntryWhereUniqueInput[]
+}
+
+export type WorkoutLogEntryUncheckedCreateNestedManyWithoutExerciseLibraryInput = {
+  create?: Prisma.XOR<Prisma.WorkoutLogEntryCreateWithoutExerciseLibraryInput, Prisma.WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput> | Prisma.WorkoutLogEntryCreateWithoutExerciseLibraryInput[] | Prisma.WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput[]
+  connectOrCreate?: Prisma.WorkoutLogEntryCreateOrConnectWithoutExerciseLibraryInput | Prisma.WorkoutLogEntryCreateOrConnectWithoutExerciseLibraryInput[]
+  createMany?: Prisma.WorkoutLogEntryCreateManyExerciseLibraryInputEnvelope
+  connect?: Prisma.WorkoutLogEntryWhereUniqueInput | Prisma.WorkoutLogEntryWhereUniqueInput[]
+}
+
+export type WorkoutLogEntryUpdateManyWithoutExerciseLibraryNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkoutLogEntryCreateWithoutExerciseLibraryInput, Prisma.WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput> | Prisma.WorkoutLogEntryCreateWithoutExerciseLibraryInput[] | Prisma.WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput[]
+  connectOrCreate?: Prisma.WorkoutLogEntryCreateOrConnectWithoutExerciseLibraryInput | Prisma.WorkoutLogEntryCreateOrConnectWithoutExerciseLibraryInput[]
+  upsert?: Prisma.WorkoutLogEntryUpsertWithWhereUniqueWithoutExerciseLibraryInput | Prisma.WorkoutLogEntryUpsertWithWhereUniqueWithoutExerciseLibraryInput[]
+  createMany?: Prisma.WorkoutLogEntryCreateManyExerciseLibraryInputEnvelope
+  set?: Prisma.WorkoutLogEntryWhereUniqueInput | Prisma.WorkoutLogEntryWhereUniqueInput[]
+  disconnect?: Prisma.WorkoutLogEntryWhereUniqueInput | Prisma.WorkoutLogEntryWhereUniqueInput[]
+  delete?: Prisma.WorkoutLogEntryWhereUniqueInput | Prisma.WorkoutLogEntryWhereUniqueInput[]
+  connect?: Prisma.WorkoutLogEntryWhereUniqueInput | Prisma.WorkoutLogEntryWhereUniqueInput[]
+  update?: Prisma.WorkoutLogEntryUpdateWithWhereUniqueWithoutExerciseLibraryInput | Prisma.WorkoutLogEntryUpdateWithWhereUniqueWithoutExerciseLibraryInput[]
+  updateMany?: Prisma.WorkoutLogEntryUpdateManyWithWhereWithoutExerciseLibraryInput | Prisma.WorkoutLogEntryUpdateManyWithWhereWithoutExerciseLibraryInput[]
+  deleteMany?: Prisma.WorkoutLogEntryScalarWhereInput | Prisma.WorkoutLogEntryScalarWhereInput[]
+}
+
+export type WorkoutLogEntryUncheckedUpdateManyWithoutExerciseLibraryNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkoutLogEntryCreateWithoutExerciseLibraryInput, Prisma.WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput> | Prisma.WorkoutLogEntryCreateWithoutExerciseLibraryInput[] | Prisma.WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput[]
+  connectOrCreate?: Prisma.WorkoutLogEntryCreateOrConnectWithoutExerciseLibraryInput | Prisma.WorkoutLogEntryCreateOrConnectWithoutExerciseLibraryInput[]
+  upsert?: Prisma.WorkoutLogEntryUpsertWithWhereUniqueWithoutExerciseLibraryInput | Prisma.WorkoutLogEntryUpsertWithWhereUniqueWithoutExerciseLibraryInput[]
+  createMany?: Prisma.WorkoutLogEntryCreateManyExerciseLibraryInputEnvelope
+  set?: Prisma.WorkoutLogEntryWhereUniqueInput | Prisma.WorkoutLogEntryWhereUniqueInput[]
+  disconnect?: Prisma.WorkoutLogEntryWhereUniqueInput | Prisma.WorkoutLogEntryWhereUniqueInput[]
+  delete?: Prisma.WorkoutLogEntryWhereUniqueInput | Prisma.WorkoutLogEntryWhereUniqueInput[]
+  connect?: Prisma.WorkoutLogEntryWhereUniqueInput | Prisma.WorkoutLogEntryWhereUniqueInput[]
+  update?: Prisma.WorkoutLogEntryUpdateWithWhereUniqueWithoutExerciseLibraryInput | Prisma.WorkoutLogEntryUpdateWithWhereUniqueWithoutExerciseLibraryInput[]
+  updateMany?: Prisma.WorkoutLogEntryUpdateManyWithWhereWithoutExerciseLibraryInput | Prisma.WorkoutLogEntryUpdateManyWithWhereWithoutExerciseLibraryInput[]
+  deleteMany?: Prisma.WorkoutLogEntryScalarWhereInput | Prisma.WorkoutLogEntryScalarWhereInput[]
+}
+
 export type WorkoutLogEntryCreateWithoutUserInput = {
   id?: string
   date: string
@@ -404,6 +470,7 @@ export type WorkoutLogEntryCreateWithoutUserInput = {
   exerciseName: string
   sets: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  exerciseLibrary?: Prisma.ExerciseLibraryCreateNestedOneWithoutLogEntriesInput
 }
 
 export type WorkoutLogEntryUncheckedCreateWithoutUserInput = {
@@ -411,6 +478,7 @@ export type WorkoutLogEntryUncheckedCreateWithoutUserInput = {
   date: string
   exerciseId: string
   exerciseName: string
+  exerciseLibraryId?: string | null
   sets: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
@@ -450,8 +518,55 @@ export type WorkoutLogEntryScalarWhereInput = {
   date?: Prisma.StringFilter<"WorkoutLogEntry"> | string
   exerciseId?: Prisma.StringFilter<"WorkoutLogEntry"> | string
   exerciseName?: Prisma.StringFilter<"WorkoutLogEntry"> | string
+  exerciseLibraryId?: Prisma.StringNullableFilter<"WorkoutLogEntry"> | string | null
   sets?: Prisma.JsonFilter<"WorkoutLogEntry">
   createdAt?: Prisma.DateTimeFilter<"WorkoutLogEntry"> | Date | string
+}
+
+export type WorkoutLogEntryCreateWithoutExerciseLibraryInput = {
+  id?: string
+  date: string
+  exerciseId: string
+  exerciseName: string
+  sets: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutWorkoutLogInput
+}
+
+export type WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput = {
+  id?: string
+  userId: string
+  date: string
+  exerciseId: string
+  exerciseName: string
+  sets: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+}
+
+export type WorkoutLogEntryCreateOrConnectWithoutExerciseLibraryInput = {
+  where: Prisma.WorkoutLogEntryWhereUniqueInput
+  create: Prisma.XOR<Prisma.WorkoutLogEntryCreateWithoutExerciseLibraryInput, Prisma.WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput>
+}
+
+export type WorkoutLogEntryCreateManyExerciseLibraryInputEnvelope = {
+  data: Prisma.WorkoutLogEntryCreateManyExerciseLibraryInput | Prisma.WorkoutLogEntryCreateManyExerciseLibraryInput[]
+  skipDuplicates?: boolean
+}
+
+export type WorkoutLogEntryUpsertWithWhereUniqueWithoutExerciseLibraryInput = {
+  where: Prisma.WorkoutLogEntryWhereUniqueInput
+  update: Prisma.XOR<Prisma.WorkoutLogEntryUpdateWithoutExerciseLibraryInput, Prisma.WorkoutLogEntryUncheckedUpdateWithoutExerciseLibraryInput>
+  create: Prisma.XOR<Prisma.WorkoutLogEntryCreateWithoutExerciseLibraryInput, Prisma.WorkoutLogEntryUncheckedCreateWithoutExerciseLibraryInput>
+}
+
+export type WorkoutLogEntryUpdateWithWhereUniqueWithoutExerciseLibraryInput = {
+  where: Prisma.WorkoutLogEntryWhereUniqueInput
+  data: Prisma.XOR<Prisma.WorkoutLogEntryUpdateWithoutExerciseLibraryInput, Prisma.WorkoutLogEntryUncheckedUpdateWithoutExerciseLibraryInput>
+}
+
+export type WorkoutLogEntryUpdateManyWithWhereWithoutExerciseLibraryInput = {
+  where: Prisma.WorkoutLogEntryScalarWhereInput
+  data: Prisma.XOR<Prisma.WorkoutLogEntryUpdateManyMutationInput, Prisma.WorkoutLogEntryUncheckedUpdateManyWithoutExerciseLibraryInput>
 }
 
 export type WorkoutLogEntryCreateManyUserInput = {
@@ -459,6 +574,7 @@ export type WorkoutLogEntryCreateManyUserInput = {
   date: string
   exerciseId: string
   exerciseName: string
+  exerciseLibraryId?: string | null
   sets: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
@@ -470,6 +586,7 @@ export type WorkoutLogEntryUpdateWithoutUserInput = {
   exerciseName?: Prisma.StringFieldUpdateOperationsInput | string
   sets?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  exerciseLibrary?: Prisma.ExerciseLibraryUpdateOneWithoutLogEntriesNestedInput
 }
 
 export type WorkoutLogEntryUncheckedUpdateWithoutUserInput = {
@@ -477,12 +594,54 @@ export type WorkoutLogEntryUncheckedUpdateWithoutUserInput = {
   date?: Prisma.StringFieldUpdateOperationsInput | string
   exerciseId?: Prisma.StringFieldUpdateOperationsInput | string
   exerciseName?: Prisma.StringFieldUpdateOperationsInput | string
+  exerciseLibraryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sets?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type WorkoutLogEntryUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.StringFieldUpdateOperationsInput | string
+  exerciseId?: Prisma.StringFieldUpdateOperationsInput | string
+  exerciseName?: Prisma.StringFieldUpdateOperationsInput | string
+  exerciseLibraryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sets?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type WorkoutLogEntryCreateManyExerciseLibraryInput = {
+  id?: string
+  userId: string
+  date: string
+  exerciseId: string
+  exerciseName: string
+  sets: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+}
+
+export type WorkoutLogEntryUpdateWithoutExerciseLibraryInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.StringFieldUpdateOperationsInput | string
+  exerciseId?: Prisma.StringFieldUpdateOperationsInput | string
+  exerciseName?: Prisma.StringFieldUpdateOperationsInput | string
+  sets?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutWorkoutLogNestedInput
+}
+
+export type WorkoutLogEntryUncheckedUpdateWithoutExerciseLibraryInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.StringFieldUpdateOperationsInput | string
+  exerciseId?: Prisma.StringFieldUpdateOperationsInput | string
+  exerciseName?: Prisma.StringFieldUpdateOperationsInput | string
+  sets?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type WorkoutLogEntryUncheckedUpdateManyWithoutExerciseLibraryInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.StringFieldUpdateOperationsInput | string
   exerciseId?: Prisma.StringFieldUpdateOperationsInput | string
   exerciseName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -498,9 +657,11 @@ export type WorkoutLogEntrySelect<ExtArgs extends runtime.Types.Extensions.Inter
   date?: boolean
   exerciseId?: boolean
   exerciseName?: boolean
+  exerciseLibraryId?: boolean
   sets?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  exerciseLibrary?: boolean | Prisma.WorkoutLogEntry$exerciseLibraryArgs<ExtArgs>
 }, ExtArgs["result"]["workoutLogEntry"]>
 
 export type WorkoutLogEntrySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -509,9 +670,11 @@ export type WorkoutLogEntrySelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   date?: boolean
   exerciseId?: boolean
   exerciseName?: boolean
+  exerciseLibraryId?: boolean
   sets?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  exerciseLibrary?: boolean | Prisma.WorkoutLogEntry$exerciseLibraryArgs<ExtArgs>
 }, ExtArgs["result"]["workoutLogEntry"]>
 
 export type WorkoutLogEntrySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -520,9 +683,11 @@ export type WorkoutLogEntrySelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   date?: boolean
   exerciseId?: boolean
   exerciseName?: boolean
+  exerciseLibraryId?: boolean
   sets?: boolean
   createdAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  exerciseLibrary?: boolean | Prisma.WorkoutLogEntry$exerciseLibraryArgs<ExtArgs>
 }, ExtArgs["result"]["workoutLogEntry"]>
 
 export type WorkoutLogEntrySelectScalar = {
@@ -531,25 +696,30 @@ export type WorkoutLogEntrySelectScalar = {
   date?: boolean
   exerciseId?: boolean
   exerciseName?: boolean
+  exerciseLibraryId?: boolean
   sets?: boolean
   createdAt?: boolean
 }
 
-export type WorkoutLogEntryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "date" | "exerciseId" | "exerciseName" | "sets" | "createdAt", ExtArgs["result"]["workoutLogEntry"]>
+export type WorkoutLogEntryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "date" | "exerciseId" | "exerciseName" | "exerciseLibraryId" | "sets" | "createdAt", ExtArgs["result"]["workoutLogEntry"]>
 export type WorkoutLogEntryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  exerciseLibrary?: boolean | Prisma.WorkoutLogEntry$exerciseLibraryArgs<ExtArgs>
 }
 export type WorkoutLogEntryIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  exerciseLibrary?: boolean | Prisma.WorkoutLogEntry$exerciseLibraryArgs<ExtArgs>
 }
 export type WorkoutLogEntryIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  exerciseLibrary?: boolean | Prisma.WorkoutLogEntry$exerciseLibraryArgs<ExtArgs>
 }
 
 export type $WorkoutLogEntryPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "WorkoutLogEntry"
   objects: {
     user: Prisma.$UserPayload<ExtArgs>
+    exerciseLibrary: Prisma.$ExerciseLibraryPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -557,6 +727,7 @@ export type $WorkoutLogEntryPayload<ExtArgs extends runtime.Types.Extensions.Int
     date: string
     exerciseId: string
     exerciseName: string
+    exerciseLibraryId: string | null
     sets: runtime.JsonValue
     createdAt: Date
   }, ExtArgs["result"]["workoutLogEntry"]>
@@ -954,6 +1125,7 @@ readonly fields: WorkoutLogEntryFieldRefs;
 export interface Prisma__WorkoutLogEntryClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  exerciseLibrary<T extends Prisma.WorkoutLogEntry$exerciseLibraryArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkoutLogEntry$exerciseLibraryArgs<ExtArgs>>): Prisma.Prisma__ExerciseLibraryClient<runtime.Types.Result.GetResult<Prisma.$ExerciseLibraryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -988,6 +1160,7 @@ export interface WorkoutLogEntryFieldRefs {
   readonly date: Prisma.FieldRef<"WorkoutLogEntry", 'String'>
   readonly exerciseId: Prisma.FieldRef<"WorkoutLogEntry", 'String'>
   readonly exerciseName: Prisma.FieldRef<"WorkoutLogEntry", 'String'>
+  readonly exerciseLibraryId: Prisma.FieldRef<"WorkoutLogEntry", 'String'>
   readonly sets: Prisma.FieldRef<"WorkoutLogEntry", 'Json'>
   readonly createdAt: Prisma.FieldRef<"WorkoutLogEntry", 'DateTime'>
 }
@@ -1388,6 +1561,25 @@ export type WorkoutLogEntryDeleteManyArgs<ExtArgs extends runtime.Types.Extensio
    * Limit how many WorkoutLogEntries to delete.
    */
   limit?: number
+}
+
+/**
+ * WorkoutLogEntry.exerciseLibrary
+ */
+export type WorkoutLogEntry$exerciseLibraryArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ExerciseLibrary
+   */
+  select?: Prisma.ExerciseLibrarySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ExerciseLibrary
+   */
+  omit?: Prisma.ExerciseLibraryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExerciseLibraryInclude<ExtArgs> | null
+  where?: Prisma.ExerciseLibraryWhereInput
 }
 
 /**

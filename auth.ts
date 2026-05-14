@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Facebook from "next-auth/providers/facebook";
 import Apple from "next-auth/providers/apple";
-import { createHash } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
 
 declare module "next-auth" {
@@ -24,7 +24,7 @@ async function createOAuthUser(email: string, providerName: string | null) {
   const base = (providerName?.toLowerCase().replace(/[^a-z0-9]/g, "_") ?? email.split("@")[0]).slice(0, 20);
   let username = base;
   if (await prisma.user.findUnique({ where: { username } })) {
-    username = `${base.slice(0, 16)}_${Math.random().toString(36).slice(2, 5)}`;
+    username = `${base.slice(0, 16)}_${randomBytes(3).toString("hex")}`;
   }
   return prisma.user.create({
     data: { email, username, role: "user", planningMode: "guided", status: "pending" },

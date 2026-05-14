@@ -47,6 +47,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow-md focus:ring-2 focus:ring-ring"
+      >
+        Skip to content
+      </a>
       {/* Sidebar — hidden on mobile, shown md+ */}
       <aside className="hidden md:flex w-56 flex-col bg-sidebar p-4 gap-1 fixed m-3 h-[calc(100vh-1.5rem)] rounded-2xl shadow-xl overflow-hidden">
         <div className="flex items-center gap-2.5 px-2 mb-4">
@@ -93,14 +99,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-1">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout} aria-label="Log out">
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 sm:p-6 pb-24 md:pb-6">
+        <main id="main-content" className="flex-1 p-4 sm:p-6 pb-24 md:pb-6">
           {children}
         </main>
 

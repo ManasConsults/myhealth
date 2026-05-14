@@ -9,17 +9,19 @@ const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
 };
 
 export function calcBMR(metrics: PhysicalMetrics, formula: TDEEFormula): number {
-  const { weight, height, age } = metrics;
-  // Assuming male for demo; can be extended with sex field
+  const { weight, height, age, biologicalSex } = metrics;
+  const isMale = biologicalSex === "male";
   switch (formula) {
     case "harris_benedict":
-      return 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age;
+      return isMale
+        ? 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age
+        : 447.593 + 9.247 * weight + 3.098 * height - 4.330 * age;
     case "katch_mcardle":
-      // Requires lean body mass — estimate as 80% of weight
+      // Gender-neutral — uses lean body mass only (estimated at 80% of weight)
       return 370 + 21.6 * (weight * 0.8);
     case "mifflin_st_jeor":
     default:
-      return 10 * weight + 6.25 * height - 5 * age + 5;
+      return 10 * weight + 6.25 * height - 5 * age + (isMale ? 5 : -161);
   }
 }
 

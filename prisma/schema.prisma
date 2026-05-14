@@ -37,11 +37,25 @@ enum TDEEFormula {
   katch_mcardle
 }
 
+enum BiologicalSex {
+  male
+  female
+}
+
 enum MealType {
   breakfast
   lunch
   snacks
   dinner
+}
+
+enum ExerciseType {
+  push
+  pull
+  legs
+  core
+  cardio
+  stretch
 }
 
 enum UserStatus {
@@ -62,6 +76,7 @@ model User {
   weight             Float?
   height             Float?
   age                Int?
+  biologicalSex      BiologicalSex?
   activityLevel      ActivityLevel?
   goal               Goal?
   // MacroTargets — stored flat
@@ -128,15 +143,30 @@ model WorkoutPlan {
   @@index([userId])
 }
 
+// Global exercise catalog — shared across all users
+model ExerciseLibrary {
+  id           String            @id @default(cuid())
+  name         String            @unique
+  muscleGroup  String            @default("")
+  type         ExerciseType?
+  instructions String?
+  logEntries   WorkoutLogEntry[]
+  createdAt    DateTime          @default(now())
+
+  @@index([name])
+}
+
 model WorkoutLogEntry {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date         String   // YYYY-MM-DD
-  exerciseId   String
-  exerciseName String
-  sets         Json     // WorkoutSet[]
-  createdAt    DateTime @default(now())
+  id                String           @id @default(cuid())
+  userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              String           // YYYY-MM-DD
+  exerciseId        String
+  exerciseName      String
+  exerciseLibraryId String?
+  exerciseLibrary   ExerciseLibrary? @relation(fields: [exerciseLibraryId], references: [id], onDelete: SetNull)
+  sets              Json             // WorkoutSet[]
+  createdAt         DateTime         @default(now())
 
   @@index([userId, date])
 }

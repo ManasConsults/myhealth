@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { saveManualProfile } from "@/lib/actions";
 import { useAuth } from "@/lib/auth-context";
-import { ActivityLevel, Goal } from "@/lib/types";
+import { ActivityLevel, BiologicalSex, Goal } from "@/lib/types";
 
 interface Props {
   onComplete: () => void;
@@ -20,6 +20,7 @@ export function ManualSetup({ onComplete }: Props) {
   const [weight, setWeight] = useState("70");
   const [height, setHeight] = useState("170");
   const [age, setAge] = useState("25");
+  const [biologicalSex, setBiologicalSex] = useState<BiologicalSex>("male");
   const [goal, setGoal] = useState<Goal>("maintenance");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>("moderate");
   const [calories, setCalories] = useState("2000");
@@ -37,6 +38,7 @@ export function ManualSetup({ onComplete }: Props) {
           weight: parseFloat(weight),
           height: parseFloat(height),
           age: parseInt(age),
+          biologicalSex,
           goal,
           activityLevel,
         },
@@ -67,6 +69,17 @@ export function ManualSetup({ onComplete }: Props) {
           <Label htmlFor="m-age">Age</Label>
           <Input id="m-age" type="number" value={age} onChange={(e) => setAge(e.target.value)} required />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Biological Sex</Label>
+        <Select value={biologicalSex} onValueChange={(v) => setBiologicalSex(v as BiologicalSex)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="male">Male</SelectItem>
+            <SelectItem value="female">Female</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -57,6 +57,7 @@ export type UserMinAggregateOutputType = {
   weight: number | null
   height: number | null
   age: number | null
+  biologicalSex: $Enums.BiologicalSex | null
   activityLevel: $Enums.ActivityLevel | null
   goal: $Enums.Goal | null
   targetCalories: number | null
@@ -79,6 +80,7 @@ export type UserMaxAggregateOutputType = {
   weight: number | null
   height: number | null
   age: number | null
+  biologicalSex: $Enums.BiologicalSex | null
   activityLevel: $Enums.ActivityLevel | null
   goal: $Enums.Goal | null
   targetCalories: number | null
@@ -101,6 +103,7 @@ export type UserCountAggregateOutputType = {
   weight: number
   height: number
   age: number
+  biologicalSex: number
   activityLevel: number
   goal: number
   targetCalories: number
@@ -145,6 +148,7 @@ export type UserMinAggregateInputType = {
   weight?: true
   height?: true
   age?: true
+  biologicalSex?: true
   activityLevel?: true
   goal?: true
   targetCalories?: true
@@ -167,6 +171,7 @@ export type UserMaxAggregateInputType = {
   weight?: true
   height?: true
   age?: true
+  biologicalSex?: true
   activityLevel?: true
   goal?: true
   targetCalories?: true
@@ -189,6 +194,7 @@ export type UserCountAggregateInputType = {
   weight?: true
   height?: true
   age?: true
+  biologicalSex?: true
   activityLevel?: true
   goal?: true
   targetCalories?: true
@@ -298,6 +304,7 @@ export type UserGroupByOutputType = {
   weight: number | null
   height: number | null
   age: number | null
+  biologicalSex: $Enums.BiologicalSex | null
   activityLevel: $Enums.ActivityLevel | null
   goal: $Enums.Goal | null
   targetCalories: number | null
@@ -343,6 +350,7 @@ export type UserWhereInput = {
   weight?: Prisma.FloatNullableFilter<"User"> | number | null
   height?: Prisma.FloatNullableFilter<"User"> | number | null
   age?: Prisma.IntNullableFilter<"User"> | number | null
+  biologicalSex?: Prisma.EnumBiologicalSexNullableFilter<"User"> | $Enums.BiologicalSex | null
   activityLevel?: Prisma.EnumActivityLevelNullableFilter<"User"> | $Enums.ActivityLevel | null
   goal?: Prisma.EnumGoalNullableFilter<"User"> | $Enums.Goal | null
   targetCalories?: Prisma.FloatNullableFilter<"User"> | number | null
@@ -370,6 +378,7 @@ export type UserOrderByWithRelationInput = {
   weight?: Prisma.SortOrderInput | Prisma.SortOrder
   height?: Prisma.SortOrderInput | Prisma.SortOrder
   age?: Prisma.SortOrderInput | Prisma.SortOrder
+  biologicalSex?: Prisma.SortOrderInput | Prisma.SortOrder
   activityLevel?: Prisma.SortOrderInput | Prisma.SortOrder
   goal?: Prisma.SortOrderInput | Prisma.SortOrder
   targetCalories?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -400,6 +409,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   weight?: Prisma.FloatNullableFilter<"User"> | number | null
   height?: Prisma.FloatNullableFilter<"User"> | number | null
   age?: Prisma.IntNullableFilter<"User"> | number | null
+  biologicalSex?: Prisma.EnumBiologicalSexNullableFilter<"User"> | $Enums.BiologicalSex | null
   activityLevel?: Prisma.EnumActivityLevelNullableFilter<"User"> | $Enums.ActivityLevel | null
   goal?: Prisma.EnumGoalNullableFilter<"User"> | $Enums.Goal | null
   targetCalories?: Prisma.FloatNullableFilter<"User"> | number | null
@@ -427,6 +437,7 @@ export type UserOrderByWithAggregationInput = {
   weight?: Prisma.SortOrderInput | Prisma.SortOrder
   height?: Prisma.SortOrderInput | Prisma.SortOrder
   age?: Prisma.SortOrderInput | Prisma.SortOrder
+  biologicalSex?: Prisma.SortOrderInput | Prisma.SortOrder
   activityLevel?: Prisma.SortOrderInput | Prisma.SortOrder
   goal?: Prisma.SortOrderInput | Prisma.SortOrder
   targetCalories?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -457,6 +468,7 @@ export type UserScalarWhereWithAggregatesInput = {
   weight?: Prisma.FloatNullableWithAggregatesFilter<"User"> | number | null
   height?: Prisma.FloatNullableWithAggregatesFilter<"User"> | number | null
   age?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null
+  biologicalSex?: Prisma.EnumBiologicalSexNullableWithAggregatesFilter<"User"> | $Enums.BiologicalSex | null
   activityLevel?: Prisma.EnumActivityLevelNullableWithAggregatesFilter<"User"> | $Enums.ActivityLevel | null
   goal?: Prisma.EnumGoalNullableWithAggregatesFilter<"User"> | $Enums.Goal | null
   targetCalories?: Prisma.FloatNullableWithAggregatesFilter<"User"> | number | null
@@ -479,6 +491,7 @@ export type UserCreateInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -506,6 +519,7 @@ export type UserUncheckedCreateInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -533,6 +547,7 @@ export type UserUpdateInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -560,6 +575,7 @@ export type UserUncheckedUpdateInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -587,6 +603,7 @@ export type UserCreateManyInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -609,6 +626,7 @@ export type UserUpdateManyMutationInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -631,6 +649,7 @@ export type UserUncheckedUpdateManyInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -653,6 +672,7 @@ export type UserCountOrderByAggregateInput = {
   weight?: Prisma.SortOrder
   height?: Prisma.SortOrder
   age?: Prisma.SortOrder
+  biologicalSex?: Prisma.SortOrder
   activityLevel?: Prisma.SortOrder
   goal?: Prisma.SortOrder
   targetCalories?: Prisma.SortOrder
@@ -685,6 +705,7 @@ export type UserMaxOrderByAggregateInput = {
   weight?: Prisma.SortOrder
   height?: Prisma.SortOrder
   age?: Prisma.SortOrder
+  biologicalSex?: Prisma.SortOrder
   activityLevel?: Prisma.SortOrder
   goal?: Prisma.SortOrder
   targetCalories?: Prisma.SortOrder
@@ -707,6 +728,7 @@ export type UserMinOrderByAggregateInput = {
   weight?: Prisma.SortOrder
   height?: Prisma.SortOrder
   age?: Prisma.SortOrder
+  biologicalSex?: Prisma.SortOrder
   activityLevel?: Prisma.SortOrder
   goal?: Prisma.SortOrder
   targetCalories?: Prisma.SortOrder
@@ -767,6 +789,10 @@ export type NullableIntFieldUpdateOperationsInput = {
   decrement?: number
   multiply?: number
   divide?: number
+}
+
+export type NullableEnumBiologicalSexFieldUpdateOperationsInput = {
+  set?: $Enums.BiologicalSex | null
 }
 
 export type NullableEnumActivityLevelFieldUpdateOperationsInput = {
@@ -866,6 +892,7 @@ export type UserCreateWithoutFoodEntriesInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -892,6 +919,7 @@ export type UserUncheckedCreateWithoutFoodEntriesInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -934,6 +962,7 @@ export type UserUpdateWithoutFoodEntriesInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -960,6 +989,7 @@ export type UserUncheckedUpdateWithoutFoodEntriesInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -986,6 +1016,7 @@ export type UserCreateWithoutWaterEntriesInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -1012,6 +1043,7 @@ export type UserUncheckedCreateWithoutWaterEntriesInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -1054,6 +1086,7 @@ export type UserUpdateWithoutWaterEntriesInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1080,6 +1113,7 @@ export type UserUncheckedUpdateWithoutWaterEntriesInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1106,6 +1140,7 @@ export type UserCreateWithoutNutritionPlansInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -1132,6 +1167,7 @@ export type UserUncheckedCreateWithoutNutritionPlansInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -1174,6 +1210,7 @@ export type UserUpdateWithoutNutritionPlansInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1200,6 +1237,7 @@ export type UserUncheckedUpdateWithoutNutritionPlansInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1226,6 +1264,7 @@ export type UserCreateWithoutWorkoutPlansInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -1252,6 +1291,7 @@ export type UserUncheckedCreateWithoutWorkoutPlansInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -1294,6 +1334,7 @@ export type UserUpdateWithoutWorkoutPlansInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1320,6 +1361,7 @@ export type UserUncheckedUpdateWithoutWorkoutPlansInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1346,6 +1388,7 @@ export type UserCreateWithoutWorkoutLogInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -1372,6 +1415,7 @@ export type UserUncheckedCreateWithoutWorkoutLogInput = {
   weight?: number | null
   height?: number | null
   age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
   activityLevel?: $Enums.ActivityLevel | null
   goal?: $Enums.Goal | null
   targetCalories?: number | null
@@ -1414,6 +1458,7 @@ export type UserUpdateWithoutWorkoutLogInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1440,6 +1485,7 @@ export type UserUncheckedUpdateWithoutWorkoutLogInput = {
   weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
   activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
   goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
   targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1533,6 +1579,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   weight?: boolean
   height?: boolean
   age?: boolean
+  biologicalSex?: boolean
   activityLevel?: boolean
   goal?: boolean
   targetCalories?: boolean
@@ -1561,6 +1608,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   weight?: boolean
   height?: boolean
   age?: boolean
+  biologicalSex?: boolean
   activityLevel?: boolean
   goal?: boolean
   targetCalories?: boolean
@@ -1583,6 +1631,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   weight?: boolean
   height?: boolean
   age?: boolean
+  biologicalSex?: boolean
   activityLevel?: boolean
   goal?: boolean
   targetCalories?: boolean
@@ -1605,6 +1654,7 @@ export type UserSelectScalar = {
   weight?: boolean
   height?: boolean
   age?: boolean
+  biologicalSex?: boolean
   activityLevel?: boolean
   goal?: boolean
   targetCalories?: boolean
@@ -1616,7 +1666,7 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "username" | "password" | "role" | "planningMode" | "onboardingComplete" | "weight" | "height" | "age" | "activityLevel" | "goal" | "targetCalories" | "targetProtein" | "targetCarbs" | "targetFat" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "username" | "password" | "role" | "planningMode" | "onboardingComplete" | "weight" | "height" | "age" | "biologicalSex" | "activityLevel" | "goal" | "targetCalories" | "targetProtein" | "targetCarbs" | "targetFat" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   foodEntries?: boolean | Prisma.User$foodEntriesArgs<ExtArgs>
   waterEntries?: boolean | Prisma.User$waterEntriesArgs<ExtArgs>
@@ -1648,6 +1698,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     weight: number | null
     height: number | null
     age: number | null
+    biologicalSex: $Enums.BiologicalSex | null
     activityLevel: $Enums.ActivityLevel | null
     goal: $Enums.Goal | null
     targetCalories: number | null
@@ -2095,6 +2146,7 @@ export interface UserFieldRefs {
   readonly weight: Prisma.FieldRef<"User", 'Float'>
   readonly height: Prisma.FieldRef<"User", 'Float'>
   readonly age: Prisma.FieldRef<"User", 'Int'>
+  readonly biologicalSex: Prisma.FieldRef<"User", 'BiologicalSex'>
   readonly activityLevel: Prisma.FieldRef<"User", 'ActivityLevel'>
   readonly goal: Prisma.FieldRef<"User", 'Goal'>
   readonly targetCalories: Prisma.FieldRef<"User", 'Float'>

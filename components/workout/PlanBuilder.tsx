@@ -8,8 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { createWorkoutPlan, editWorkoutPlan, removeWorkoutPlan } from "@/lib/actions";
-import { WorkoutDay, WorkoutPlan } from "@/lib/types";
+import { createWorkoutPlan, editWorkoutPlan, removeWorkoutPlan, upsertExerciseInLibrary } from "@/lib/actions";
+import {
+  ExerciseLibrary,
+  ExerciseType,
+  EXERCISE_TYPE_LABELS,
+  EXERCISE_TYPE_OPTIONS,
+  WorkoutDay,
+  WorkoutPlan,
+} from "@/lib/types";
 import { Check, ChevronDown, ChevronUp, Dumbbell, Moon, Pencil, Plus, Trash2, X, Zap } from "lucide-react";
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -18,21 +25,14 @@ const DAY_SHORT: Record<string, string> = {
   Friday: "Fri", Saturday: "Sat", Sunday: "Sun",
 };
 
-const EXERCISE_LIBRARY: Record<string, string[]> = {
-  Push: ["Bench Press", "Incline Dumbbell Press", "Overhead Press", "Lateral Raise", "Tricep Pushdown", "Dips", "Cable Fly", "Skull Crushers"],
-  Pull: ["Deadlift", "Pull-ups", "Chin-ups", "Barbell Row", "Cable Row", "Bicep Curl", "Face Pull", "Lat Pulldown"],
-  Legs: ["Squat", "Romanian Deadlift", "Leg Press", "Leg Curl", "Calf Raise", "Hip Thrust", "Walking Lunges", "Bulgarian Split Squat"],
-  Core: ["Plank", "Crunches", "Leg Raise", "Russian Twist", "Ab Wheel", "Cable Crunch", "Hollow Hold"],
-  Cardio: ["Running", "Cycling", "Jump Rope", "Rowing Machine", "HIIT Sprints", "Stair Climber"],
-};
-
 interface Props {
   userId: string;
   plans: WorkoutPlan[];
+  exerciseLibrary: ExerciseLibrary[];
   onUpdate: () => void;
 }
 
-export function PlanBuilder({ userId, plans, onUpdate }: Props) {
+export function PlanBuilder({ userId, plans, exerciseLibrary, onUpdate }: Props) {
   const [open, setOpen] = useState(false);
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -40,8 +40,9 @@ export function PlanBuilder({ userId, plans, onUpdate }: Props) {
   const [schedule, setSchedule] = useState<Record<string, string[]>>({});
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [selectedDay, setSelectedDay] = useState("Monday");
-  const [activeCategory, setActiveCategory] = useState("Push");
+  const [activeCategory, setActiveCategory] = useState<ExerciseType | null>(null);
   const [customInput, setCustomInput] = useState("");
+  const [customType, setCustomType] = useState<ExerciseType | null>(null);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
 
   function resetSheetState() {
@@ -49,8 +50,9 @@ export function PlanBuilder({ userId, plans, onUpdate }: Props) {
     setSchedule({});
     setLabels({});
     setSelectedDay("Monday");
-    setActiveCategory("Push");
+    setActiveCategory(null);
     setCustomInput("");
+    setCustomType(null);
   }
 
   function openSheet() {
@@ -70,8 +72,9 @@ export function PlanBuilder({ userId, plans, onUpdate }: Props) {
     setSchedule(sch);
     setLabels(lbl);
     setSelectedDay(plan.days[0]?.day ?? "Monday");
-    setActiveCategory("Push");
+    setActiveCategory(null);
     setCustomInput("");
+    setCustomType(null);
     setEditingPlanId(plan.id);
     setOpen(true);
   }
@@ -108,6 +111,8 @@ export function PlanBuilder({ userId, plans, onUpdate }: Props) {
       setSchedule((prev) => ({ ...prev, [selectedDay]: [...(prev[selectedDay] ?? []), val] }));
     }
     setCustomInput("");
+    void upsertExerciseInLibrary(val, customType ?? undefined);
+    setCustomType(null);
   }
 
   function handleSubmit(e: React.BaseSyntheticEvent) {
@@ -140,6 +145,15 @@ export function PlanBuilder({ userId, plans, onUpdate }: Props) {
   const dayExercises = schedule[selectedDay] ?? [];
   const trainingDays = Object.keys(schedule).length;
   const isEditing = editingPlanId !== null;
+
+  // Types that actually have exercises in the library
+  const availableTypes = EXERCISE_TYPE_OPTIONS.filter(
+    (t) => exerciseLibrary.some((ex) => ex.type === t)
+  );
+
+  const shownExercises = activeCategory
+    ? exerciseLibrary.filter((ex) => ex.type === activeCategory)
+    : exerciseLibrary;
 
   return (
     <div className="space-y-4">
@@ -286,72 +300,117 @@ export function PlanBuilder({ userId, plans, onUpdate }: Props) {
 
                     <Separator />
 
-                    {/* Category tabs */}
+                    {/* Exercise library picker */}
                     <div className="space-y-3">
-                      <div className="flex gap-1.5 flex-wrap">
-                        {Object.keys(EXERCISE_LIBRARY).map((cat) => (
+                      {/* Type filter chips */}
+                      {availableTypes.length > 0 && (
+                        <div className="flex gap-1.5 flex-wrap">
                           <button
-                            key={cat}
                             type="button"
-                            onClick={() => setActiveCategory(cat)}
+                            onClick={() => setActiveCategory(null)}
                             className={[
                               "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
-                              activeCategory === cat
+                              activeCategory === null
                                 ? "bg-foreground text-background border-foreground"
                                 : "bg-transparent text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground",
                             ].join(" ")}
                           >
-                            {cat}
+                            All
                           </button>
-                        ))}
-                      </div>
-
-                      {/* Exercise chips */}
-                      <div className="flex flex-wrap gap-1.5">
-                        {EXERCISE_LIBRARY[activeCategory]?.map((ex) => {
-                          const picked = dayExercises.includes(ex);
-                          return (
+                          {availableTypes.map((type) => (
                             <button
-                              key={ex}
+                              key={type}
                               type="button"
-                              onClick={() => toggleExercise(ex)}
+                              onClick={() => setActiveCategory(type)}
                               className={[
-                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
-                                picked
-                                  ? "bg-primary/10 text-primary border-primary/40 shadow-sm"
-                                  : "bg-background text-foreground border-border hover:border-primary/30 hover:bg-primary/5",
+                                "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+                                activeCategory === type
+                                  ? "bg-foreground text-background border-foreground"
+                                  : "bg-transparent text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground",
                               ].join(" ")}
                             >
-                              {picked && <Check className="w-3 h-3 shrink-0" />}
-                              {ex}
+                              {EXERCISE_TYPE_LABELS[type]}
                             </button>
-                          );
-                        })}
-                      </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Exercise chips */}
+                      {shownExercises.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {shownExercises.map((ex) => {
+                            const picked = dayExercises.includes(ex.name);
+                            return (
+                              <button
+                                key={ex.id}
+                                type="button"
+                                onClick={() => toggleExercise(ex.name)}
+                                className={[
+                                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                                  picked
+                                    ? "bg-primary/10 text-primary border-primary/40 shadow-sm"
+                                    : "bg-background text-foreground border-border hover:border-primary/30 hover:bg-primary/5",
+                                ].join(" ")}
+                              >
+                                {picked && <Check className="w-3 h-3 shrink-0" />}
+                                {ex.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground text-center py-3">
+                          {exerciseLibrary.length === 0
+                            ? "Library is empty — log workouts to build it up."
+                            : "No exercises in this category."}
+                        </p>
+                      )}
                     </div>
 
                     <Separator />
 
                     {/* Custom exercise */}
-                    <div className="flex gap-2">
-                      <Input
-                        value={customInput}
-                        onChange={(e) => setCustomInput(e.target.value)}
-                        placeholder="Add custom exercise…"
-                        className="flex-1 h-9 text-sm"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") { e.preventDefault(); addCustomExercise(); }
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-9 px-3"
-                        onClick={addCustomExercise}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          value={customInput}
+                          onChange={(e) => setCustomInput(e.target.value)}
+                          placeholder="Add custom exercise…"
+                          className="flex-1 h-9 text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") { e.preventDefault(); addCustomExercise(); }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-9 px-3"
+                          onClick={addCustomExercise}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {customInput.trim().length > 0 && (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs text-muted-foreground">Type:</span>
+                          {EXERCISE_TYPE_OPTIONS.map((type) => (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => setCustomType(customType === type ? null : type)}
+                              className={[
+                                "px-2.5 py-1 rounded-full text-xs font-medium transition-all border",
+                                customType === type
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-transparent text-muted-foreground border-border hover:border-primary/30 hover:text-foreground",
+                              ].join(" ")}
+                            >
+                              {EXERCISE_TYPE_LABELS[type]}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (

@@ -54,6 +54,14 @@ export const TDEEFormula = {
 export type TDEEFormula = (typeof TDEEFormula)[keyof typeof TDEEFormula]
 
 
+export const BiologicalSex = {
+  male: 'male',
+  female: 'female'
+} as const
+
+export type BiologicalSex = (typeof BiologicalSex)[keyof typeof BiologicalSex]
+
+
 export const MealType = {
   breakfast: 'breakfast',
   lunch: 'lunch',
@@ -62,6 +70,18 @@ export const MealType = {
 } as const
 
 export type MealType = (typeof MealType)[keyof typeof MealType]
+
+
+export const ExerciseType = {
+  push: 'push',
+  pull: 'pull',
+  legs: 'legs',
+  core: 'core',
+  cardio: 'cardio',
+  stretch: 'stretch'
+} as const
+
+export type ExerciseType = (typeof ExerciseType)[keyof typeof ExerciseType]
 
 
 export const UserStatus = {

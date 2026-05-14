@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { clearWorkoutLogForDate, logWorkout, logWorkoutsBatch, removeWorkoutLogEntry, updateWorkoutLogEntry } from "@/lib/actions";
-import { WorkoutLogEntry, WorkoutPlan, WorkoutSet } from "@/lib/types";
-import { BookOpen, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ExerciseLibrary, WorkoutLogEntry, WorkoutPlan, WorkoutSet } from "@/lib/types";
+import { BookOpen, CalendarDays, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ExerciseType, EXERCISE_TYPE_LABELS, EXERCISE_TYPE_OPTIONS } from "@/lib/types";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,6 @@ const MONTH_NAMES = [
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
 
 function setsKey(day: string, exercise: string) {
   return `${day}::${exercise}`;
@@ -43,6 +43,16 @@ function fmtDate(iso: string) {
   });
 }
 
+function toLocalISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function addDays(iso: string, delta: number): string {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + delta);
+  return toLocalISO(d);
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type SetsMap = Record<string, WorkoutSet[]>;
@@ -51,17 +61,20 @@ interface Props {
   userId: string;
   log: WorkoutLogEntry[];
   plans: WorkoutPlan[];
+  exerciseLibrary: ExerciseLibrary[];
   onUpdate: () => void;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
-  const today = new Date().toISOString().split("T")[0];
+export function ExerciseLogger({ userId, log, plans, exerciseLibrary, onUpdate }: Props) {
+  const today = toLocalISO(new Date());
 
   // Ad-hoc dialog
   const [open, setOpen] = useState(false);
   const [exerciseName, setExerciseName] = useState("");
+  const [exerciseType, setExerciseType] = useState<ExerciseType | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [sets, setSets] = useState<WorkoutSet[]>([{ setNumber: 1, reps: 8, weight: 60 }]);
 
   // Edit dialog
@@ -75,14 +88,34 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
   const [borrowDay, setBorrowDay] = useState<string | null>(null);
   const [setsMap, setSetsMap] = useState<SetsMap>({});
 
-  // Calendar
+  // Date state
   const [selectedDate, setSelectedDate] = useState(today);
   const [displayMonth, setDisplayMonth] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
   });
 
+  // Native date input ref for mobile picker
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
   const [isPending, startTransition] = useTransition();
+
+  // ── Date navigation ────────────────────────────────────────────
+
+  function navigateDay(delta: number) {
+    const next = addDays(selectedDate, delta);
+    if (next > today) return;
+    setSelectedDate(next);
+    const d = new Date(`${next}T00:00:00`);
+    setDisplayMonth({ year: d.getFullYear(), month: d.getMonth() });
+  }
+
+  function handleDateInputChange(val: string) {
+    if (!val || val > today) return;
+    setSelectedDate(val);
+    const d = new Date(`${val}T00:00:00`);
+    setDisplayMonth({ year: d.getFullYear(), month: d.getMonth() });
+  }
 
   // ── Ad-hoc log ─────────────────────────────────────────────────
 
@@ -101,8 +134,9 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
   function handleLog(e: React.BaseSyntheticEvent) {
     e.preventDefault();
     startTransition(async () => {
-      await logWorkout(userId, exerciseName, sets, selectedDate);
+      await logWorkout(userId, exerciseName, sets, selectedDate, exerciseType ?? undefined);
       setExerciseName("");
+      setExerciseType(null);
       setSets([{ setNumber: 1, reps: 8, weight: 60 }]);
       setOpen(false);
       onUpdate();
@@ -248,6 +282,12 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
     return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   }
 
+  // ── Exercise autocomplete ──────────────────────────────────────
+
+  const suggestions = exerciseLibrary
+    .filter((ex) => ex.name.toLowerCase().includes(exerciseName.toLowerCase()))
+    .slice(0, 8);
+
   // ── Derived ────────────────────────────────────────────────────
 
   const selectedLabel = selectedDate === today ? "Today" : fmtDate(selectedDate);
@@ -279,10 +319,45 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
   // ── Render ─────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 items-start">
+    <div className="flex flex-col lg:flex-row gap-4 lg:items-start">
 
       {/* ── Left: log ─────────────────────────────────────────── */}
       <div className="flex-1 min-w-0 space-y-4">
+
+        {/* Mobile date navigation — hidden on lg */}
+        <div className="flex lg:hidden items-center gap-2">
+          <button
+            onClick={() => navigateDay(-1)}
+            className="min-w-11 min-h-11 flex items-center justify-center rounded-lg border hover:bg-muted transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="relative flex-1">
+            <button
+              className="w-full min-h-11 flex items-center justify-center gap-1.5 rounded-lg border text-sm font-medium hover:bg-muted transition-colors"
+              onClick={() => dateInputRef.current?.showPicker?.()}
+            >
+              <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
+              {selectedLabel}
+            </button>
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={selectedDate}
+              max={today}
+              onChange={(e) => handleDateInputChange(e.target.value)}
+              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+              tabIndex={-1}
+            />
+          </div>
+          <button
+            onClick={() => navigateDay(1)}
+            disabled={selectedDate >= today}
+            className="min-w-11 min-h-11 flex items-center justify-center rounded-lg border hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-default"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
@@ -308,19 +383,64 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
         </div>
 
         {/* ── Ad-hoc dialog ──────────────────────────────────── */}
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setExerciseName(""); setExerciseType(null); setShowSuggestions(false); } }}>
           <DialogContent>
             <DialogHeader><DialogTitle>Log Exercise — {selectedLabel}</DialogTitle></DialogHeader>
             <form onSubmit={handleLog} className="space-y-4 mt-2">
               <div className="space-y-1.5">
                 <Label>Exercise</Label>
-                <Input
-                  value={exerciseName}
-                  onChange={(e) => setExerciseName(e.target.value)}
-                  placeholder="e.g. Bench Press"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    value={exerciseName}
+                    onChange={(e) => { setExerciseName(e.target.value); setShowSuggestions(true); }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    placeholder="e.g. Bench Press"
+                    autoComplete="off"
+                    required
+                  />
+                  {showSuggestions && exerciseName.length > 0 && suggestions.length > 0 && (
+                    <div className="absolute z-50 w-full top-full mt-1 rounded-lg border bg-popover shadow-md max-h-48 overflow-y-auto">
+                      {suggestions.map((ex) => (
+                        <button
+                          key={ex.id}
+                          type="button"
+                          onMouseDown={() => { setExerciseName(ex.name); setShowSuggestions(false); if (ex.type) setExerciseType(ex.type); }}
+                          className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition-colors flex items-center justify-between gap-2"
+                        >
+                          <span>{ex.name}</span>
+                          {ex.type ? (
+                            <span className="text-xs text-muted-foreground shrink-0">{EXERCISE_TYPE_LABELS[ex.type]}</span>
+                          ) : ex.muscleGroup ? (
+                            <span className="text-xs text-muted-foreground shrink-0">{ex.muscleGroup}</span>
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+              <div className="space-y-1.5">
+                <Label>Type <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {EXERCISE_TYPE_OPTIONS.map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setExerciseType(exerciseType === type ? null : type)}
+                      className={[
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+                        exerciseType === type
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-transparent text-muted-foreground border-border hover:border-primary/30 hover:text-foreground",
+                      ].join(" ")}
+                    >
+                      {EXERCISE_TYPE_LABELS[type]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label>Sets</Label>
                 {sets.map((set, idx) => (
@@ -571,8 +691,8 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
         )}
       </div>
 
-      {/* ── Right: calendar ───────────────────────────────────── */}
-      <div className="w-full lg:w-64 shrink-0">
+      {/* ── Right: calendar — desktop only ────────────────────── */}
+      <div className="hidden lg:block w-64 shrink-0">
         <Card>
           <CardContent className="pt-4 pb-4 px-3">
             <div className="flex items-center justify-between mb-3">
@@ -608,7 +728,10 @@ export function ExerciseLogger({ userId, log, plans, onUpdate }: Props) {
                   <div key={i} className="flex flex-col items-center py-0.5">
                     {isValid ? (
                       <button
-                        onClick={() => !isFuture && setSelectedDate(dateStr)}
+                        onClick={() => {
+                          if (isFuture) return;
+                          setSelectedDate(dateStr);
+                        }}
                         disabled={isFuture}
                         className={[
                           "relative w-8 h-8 rounded-full text-xs font-medium flex items-center justify-center transition-colors",
