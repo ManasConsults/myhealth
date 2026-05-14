@@ -7,6 +7,33 @@ export type UserRole = "user" | "admin";
 export type MealType = "breakfast" | "lunch" | "snacks" | "dinner";
 export type UserStatus = "pending" | "approved" | "rejected";
 export type ExerciseType = "push" | "pull" | "legs" | "core" | "cardio" | "stretch";
+export type FeedbackStatus = "pending" | "in_progress" | "resolved";
+export type FeedbackCategory = "bug" | "suggestion" | "other";
+
+export const FEEDBACK_STATUS_LABELS: Record<FeedbackStatus, string> = {
+  pending: "Pending",
+  in_progress: "In Progress",
+  resolved: "Resolved",
+};
+
+export const FEEDBACK_CATEGORY_LABELS: Record<FeedbackCategory, string> = {
+  bug: "Bug Report",
+  suggestion: "Suggestion",
+  other: "Other",
+};
+
+export interface Feedback {
+  id: string;
+  userId: string;
+  username: string;
+  title: string;
+  category: FeedbackCategory;
+  message: string;
+  status: FeedbackStatus;
+  adminNote?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export const EXERCISE_TYPE_LABELS: Record<ExerciseType, string> = {
   push: "Push",

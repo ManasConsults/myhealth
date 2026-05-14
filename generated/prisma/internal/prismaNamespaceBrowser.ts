@@ -59,6 +59,7 @@ export const ModelName = {
   ExerciseLibrary: 'ExerciseLibrary',
   WorkoutLogEntry: 'WorkoutLogEntry',
   GlobalSettings: 'GlobalSettings',
+  Feedback: 'Feedback',
   FoodCache: 'FoodCache'
 } as const
 
@@ -186,6 +187,21 @@ export const GlobalSettingsScalarFieldEnum = {
 } as const
 
 export type GlobalSettingsScalarFieldEnum = (typeof GlobalSettingsScalarFieldEnum)[keyof typeof GlobalSettingsScalarFieldEnum]
+
+
+export const FeedbackScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  title: 'title',
+  category: 'category',
+  message: 'message',
+  status: 'status',
+  adminNote: 'adminNote',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FeedbackScalarFieldEnum = (typeof FeedbackScalarFieldEnum)[keyof typeof FeedbackScalarFieldEnum]
 
 
 export const FoodCacheScalarFieldEnum = {

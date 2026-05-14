@@ -9,6 +9,9 @@ import type {
   BiologicalSex,
   ExerciseLibrary,
   ExerciseType,
+  Feedback,
+  FeedbackCategory,
+  FeedbackStatus,
   FoodEntry,
   FoodSearchResult,
   FoodUnit,
@@ -40,6 +43,7 @@ import type {
   WorkoutLogEntry as DbWorkoutLogEntry,
   ExerciseLibrary as DbExerciseLibrary,
   FoodCache as DbFoodCache,
+  Feedback as DbFeedback,
 } from "@/generated/prisma/client";
 
 // ---------------------------------------------------------------------------
@@ -722,4 +726,82 @@ export async function updateFoodServing(
     where: { fdcId },
     data: { servingUnit, gramsPerServing },
   });
+}
+
+// ---------------------------------------------------------------------------
+// Feedback
+// ---------------------------------------------------------------------------
+
+function toFeedback(f: DbFeedback & { user: { username: string } }): Feedback {
+  return {
+    id: f.id,
+    userId: f.userId,
+    username: f.user.username,
+    title: f.title,
+    category: f.category as FeedbackCategory,
+    message: f.message,
+    status: f.status as FeedbackStatus,
+    adminNote: f.adminNote ?? undefined,
+    createdAt: f.createdAt.toISOString(),
+    updatedAt: f.updatedAt.toISOString(),
+  };
+}
+
+export async function submitFeedback(
+  title: string,
+  category: FeedbackCategory,
+  message: string,
+): Promise<Feedback> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) throw new Error("Unauthorized");
+  const row = await prisma.feedback.create({
+    data: { userId, title, category, message },
+    include: { user: { select: { username: true } } },
+  });
+  return toFeedback(row);
+}
+
+export async function fetchUserFeedback(): Promise<Feedback[]> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) throw new Error("Unauthorized");
+  const rows = await prisma.feedback.findMany({
+    where: { userId },
+    include: { user: { select: { username: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map(toFeedback);
+}
+
+export async function fetchAllFeedback(): Promise<Feedback[]> {
+  await requireAdmin();
+  const rows = await prisma.feedback.findMany({
+    include: { user: { select: { username: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map(toFeedback);
+}
+
+export async function updateFeedbackStatus(
+  id: string,
+  status: FeedbackStatus,
+  adminNote?: string,
+): Promise<void> {
+  await requireAdmin();
+  await prisma.feedback.update({
+    where: { id },
+    data: { status, ...(adminNote !== undefined && { adminNote }) },
+  });
+}
+
+export async function deleteFeedback(id: string): Promise<void> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) throw new Error("Unauthorized");
+  const row = await prisma.feedback.findUnique({ where: { id } });
+  if (!row) return;
+  const isAdmin = session?.user?.role === "admin";
+  if (!isAdmin && row.userId !== userId) throw new Error("Forbidden");
+  await prisma.feedback.delete({ where: { id } });
 }

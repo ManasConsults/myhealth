@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { useAuth } from "@/lib/auth-context";
 import {
   Activity,
@@ -13,6 +15,7 @@ import {
   Dumbbell,
   LayoutDashboard,
   LogOut,
+  MessageSquare,
   UserCircle,
   Users,
 } from "lucide-react";
@@ -37,6 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   function handleLogout() {
     logout();
@@ -69,6 +73,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="mt-auto space-y-2 pt-4">
           <Separator />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+            onClick={() => setFeedbackOpen(true)}
+          >
+            <MessageSquare className="w-4 h-4" /> Feedback
+          </Button>
           <div className="flex items-center justify-between px-2 py-1">
             <Link href="/dashboard/profile" className="min-w-0 hover:opacity-70 transition-opacity">
               <p className="text-xs font-semibold truncate">{user?.username}</p>
@@ -98,6 +110,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="font-bold">MyHealth</span>
           </div>
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setFeedbackOpen(true)}
+              aria-label="Feedback"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </Button>
             <ThemeToggle />
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout} aria-label="Log out">
               <LogOut className="w-4 h-4" />
@@ -131,6 +152,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
       </div>
+
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </div>
   );
 }
