@@ -6,20 +6,28 @@ import { PlanBuilder } from "@/components/workout/PlanBuilder";
 import { ExerciseLogger } from "@/components/workout/ExerciseLogger";
 import { WorkoutReports } from "@/components/workout/WorkoutReports";
 import { useAuth } from "@/lib/auth-context";
-import { fetchWorkoutPlans, fetchWorkoutLog } from "@/lib/actions";
-import { WorkoutLogEntry, WorkoutPlan } from "@/lib/types";
+import { fetchWorkoutPlans, fetchWorkoutLog, fetchExerciseLibrary } from "@/lib/actions";
+import { ExerciseLibrary, WorkoutLogEntry, WorkoutPlan } from "@/lib/types";
 
 export default function WorkoutPage() {
   const { user } = useAuth();
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [log, setLog] = useState<WorkoutLogEntry[]>([]);
+  const [exerciseLibrary, setExerciseLibrary] = useState<ExerciseLibrary[]>([]);
 
   async function reloadPlans() {
     if (user) setPlans(await fetchWorkoutPlans(user.id));
   }
 
   async function reloadLog() {
-    if (user) setLog(await fetchWorkoutLog(user.id));
+    if (user) {
+      const [entries, library] = await Promise.all([
+        fetchWorkoutLog(user.id),
+        fetchExerciseLibrary(),
+      ]);
+      setLog(entries);
+      setExerciseLibrary(library);
+    }
   }
 
   useEffect(() => {
@@ -45,11 +53,11 @@ export default function WorkoutPage() {
         </TabsList>
 
         <TabsContent value="log" className="mt-4">
-          <ExerciseLogger userId={user.id} log={log} plans={plans} onUpdate={reloadLog} />
+          <ExerciseLogger userId={user.id} log={log} plans={plans} exerciseLibrary={exerciseLibrary} onUpdate={reloadLog} />
         </TabsContent>
 
         <TabsContent value="plans" className="mt-4">
-          <PlanBuilder userId={user.id} plans={plans} onUpdate={reloadPlans} />
+          <PlanBuilder userId={user.id} plans={plans} exerciseLibrary={exerciseLibrary} onUpdate={reloadPlans} />
         </TabsContent>
 
         <TabsContent value="reports" className="mt-4">

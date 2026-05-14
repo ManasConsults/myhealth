@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { saveGuidedProfile } from "@/lib/actions";
 import { useAuth } from "@/lib/auth-context";
-import { ActivityLevel, Goal, TDEEFormula } from "@/lib/types";
+import { ActivityLevel, BiologicalSex, Goal, TDEEFormula } from "@/lib/types";
 import { calcMacros, calcTDEE } from "@/lib/calculations";
 
 interface Props {
@@ -23,6 +23,7 @@ export function GuidedSetup({ formula, onComplete }: Props) {
   const [weight, setWeight] = useState("70");
   const [height, setHeight] = useState("170");
   const [age, setAge] = useState("25");
+  const [biologicalSex, setBiologicalSex] = useState<BiologicalSex>("male");
   const [goal, setGoal] = useState<Goal>("maintenance");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>("moderate");
 
@@ -30,6 +31,7 @@ export function GuidedSetup({ formula, onComplete }: Props) {
     weight: parseFloat(weight) || 0,
     height: parseFloat(height) || 0,
     age: parseInt(age) || 0,
+    biologicalSex,
     goal,
     activityLevel,
   };
@@ -64,6 +66,17 @@ export function GuidedSetup({ formula, onComplete }: Props) {
           <Label htmlFor="age">Age</Label>
           <Input id="age" type="number" value={age} onChange={(e) => setAge(e.target.value)} min={10} max={120} required />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Biological Sex</Label>
+        <Select value={biologicalSex} onValueChange={(v) => setBiologicalSex(v as BiologicalSex)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="male">Male</SelectItem>
+            <SelectItem value="female">Female</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

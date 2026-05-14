@@ -12,9 +12,9 @@ import { FoodEntry, GOAL_LABELS } from "@/lib/types";
 import { Apple, Dumbbell, Flame, Target } from "lucide-react";
 
 const MACRO_COLORS = {
-  protein: "#3b82f6",
-  carbs: "#f59e0b",
-  fat: "#ef4444",
+  protein: "var(--chart-1)",
+  carbs: "var(--chart-3)",
+  fat: "var(--chart-4)",
 };
 
 export default function DashboardPage() {

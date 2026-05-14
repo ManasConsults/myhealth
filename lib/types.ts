@@ -2,14 +2,28 @@ export type PlanningMode = "guided" | "manual";
 export type Goal = "weight_loss" | "muscle_gain" | "maintenance";
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "very_active";
 export type TDEEFormula = "mifflin_st_jeor" | "harris_benedict" | "katch_mcardle";
+export type BiologicalSex = "male" | "female";
 export type UserRole = "user" | "admin";
 export type MealType = "breakfast" | "lunch" | "snacks" | "dinner";
 export type UserStatus = "pending" | "approved" | "rejected";
+export type ExerciseType = "push" | "pull" | "legs" | "core" | "cardio" | "stretch";
+
+export const EXERCISE_TYPE_LABELS: Record<ExerciseType, string> = {
+  push: "Push",
+  pull: "Pull",
+  legs: "Legs",
+  core: "Core",
+  cardio: "Cardio",
+  stretch: "Stretch",
+};
+
+export const EXERCISE_TYPE_OPTIONS: ExerciseType[] = ["push", "pull", "legs", "core", "cardio", "stretch"];
 
 export interface PhysicalMetrics {
   weight: number; // kg
   height: number; // cm
   age: number;
+  biologicalSex: BiologicalSex;
   activityLevel: ActivityLevel;
   goal: Goal;
 }
@@ -88,6 +102,15 @@ export interface Exercise {
   id: string;
   name: string;
   muscleGroup: string;
+}
+
+export interface ExerciseLibrary {
+  id: string;
+  name: string;
+  muscleGroup: string;
+  type?: ExerciseType;
+  instructions?: string;
+  createdAt: string;
 }
 
 export interface WorkoutSet {

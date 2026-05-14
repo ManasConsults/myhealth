@@ -2,9 +2,13 @@
 
 import { createHash } from "crypto";
 import { prisma } from "./db";
+import { auth } from "@/auth";
 import { calcMacros } from "./calculations";
 import type {
   ActivityLevel,
+  BiologicalSex,
+  ExerciseLibrary,
+  ExerciseType,
   FoodEntry,
   FoodSearchResult,
   FoodUnit,
@@ -34,6 +38,7 @@ import type {
   NutritionPlan as DbNutritionPlan,
   WorkoutPlan as DbWorkoutPlan,
   WorkoutLogEntry as DbWorkoutLogEntry,
+  ExerciseLibrary as DbExerciseLibrary,
   FoodCache as DbFoodCache,
 } from "@/generated/prisma/client";
 
@@ -44,7 +49,7 @@ import type {
 function toUserProfile(u: DbUser): UserProfile {
   const hasMetrics =
     u.weight != null && u.height != null && u.age != null &&
-    u.activityLevel != null && u.goal != null;
+    u.biologicalSex != null && u.activityLevel != null && u.goal != null;
   const hasMacros =
     u.targetCalories != null && u.targetProtein != null &&
     u.targetCarbs != null && u.targetFat != null;
@@ -60,6 +65,7 @@ function toUserProfile(u: DbUser): UserProfile {
       weight: u.weight!,
       height: u.height!,
       age: u.age!,
+      biologicalSex: u.biologicalSex as BiologicalSex,
       activityLevel: u.activityLevel as ActivityLevel,
       goal: u.goal as Goal,
     } : null,
@@ -107,6 +113,17 @@ function toNutritionPlan(p: DbNutritionPlan): NutritionPlan {
   };
 }
 
+function toExerciseLibrary(e: DbExerciseLibrary): ExerciseLibrary {
+  return {
+    id: e.id,
+    name: e.name,
+    muscleGroup: e.muscleGroup,
+    type: (e.type as ExerciseType) ?? undefined,
+    instructions: e.instructions ?? undefined,
+    createdAt: e.createdAt.toISOString(),
+  };
+}
+
 function toWorkoutPlan(p: DbWorkoutPlan): WorkoutPlan {
   return {
     id: p.id,
@@ -126,6 +143,15 @@ function toWorkoutLogEntry(e: DbWorkoutLogEntry): WorkoutLogEntry {
     exerciseName: e.exerciseName,
     sets: e.sets as unknown as WorkoutSet[],
   };
+}
+
+// ---------------------------------------------------------------------------
+// Authorization helper
+// ---------------------------------------------------------------------------
+
+async function requireAdmin(): Promise<void> {
+  const session = await auth();
+  if (session?.user?.role !== "admin") throw new Error("Forbidden");
 }
 
 // ---------------------------------------------------------------------------
@@ -158,6 +184,7 @@ export async function saveGuidedProfile(
       weight: metrics.weight,
       height: metrics.height,
       age: metrics.age,
+      biologicalSex: metrics.biologicalSex,
       activityLevel: metrics.activityLevel,
       goal: metrics.goal,
       targetCalories: macroTargets.calories,
@@ -182,6 +209,7 @@ export async function saveManualProfile(
       weight: metrics.weight,
       height: metrics.height,
       age: metrics.age,
+      biologicalSex: metrics.biologicalSex,
       activityLevel: metrics.activityLevel,
       goal: metrics.goal,
       targetCalories: macroTargets.calories,
@@ -312,14 +340,21 @@ export async function logWorkout(
   userId: string,
   exerciseName: string,
   sets: WorkoutSet[],
-  date: string
+  date: string,
+  type?: ExerciseType
 ): Promise<WorkoutLogEntry> {
+  const lib = await prisma.exerciseLibrary.upsert({
+    where: { name: exerciseName },
+    update: type ? { type } : {},
+    create: { name: exerciseName, ...(type ? { type } : {}) },
+  });
   const created = await prisma.workoutLogEntry.create({
     data: {
       userId,
       date,
       exerciseId: `e_${exerciseName.toLowerCase().replace(/\s+/g, "_")}`,
       exerciseName,
+      exerciseLibraryId: lib.id,
       sets: sets as unknown as Prisma.InputJsonValue,
     },
   });
@@ -347,12 +382,24 @@ export async function logWorkoutsBatch(
   userId: string,
   entries: Array<{ exerciseName: string; sets: WorkoutSet[]; date: string }>
 ): Promise<void> {
+  // Upsert all unique exercise names into the library first
+  const uniqueNames = [...new Set(entries.map((e) => e.exerciseName))];
+  await prisma.exerciseLibrary.createMany({
+    data: uniqueNames.map((name) => ({ name })),
+    skipDuplicates: true,
+  });
+  const libRows = await prisma.exerciseLibrary.findMany({
+    where: { name: { in: uniqueNames } },
+    select: { id: true, name: true },
+  });
+  const libIdByName = Object.fromEntries(libRows.map((r) => [r.name, r.id]));
   await prisma.workoutLogEntry.createMany({
     data: entries.map(({ exerciseName, sets, date }) => ({
       userId,
       date,
       exerciseId: `e_${exerciseName.toLowerCase().replace(/\s+/g, "_")}`,
       exerciseName,
+      exerciseLibraryId: libIdByName[exerciseName],
       sets: sets as unknown as Prisma.InputJsonValue,
     })),
   });
@@ -363,6 +410,7 @@ export async function logWorkoutsBatch(
 // ---------------------------------------------------------------------------
 
 export async function updateGlobalSettings(patch: Partial<GlobalSettings>): Promise<GlobalSettings> {
+  await requireAdmin();
   const updated = await prisma.globalSettings.upsert({
     where: { id: "global" },
     update: patch,
@@ -412,6 +460,49 @@ export async function fetchWorkoutPlans(userId: string): Promise<WorkoutPlan[]> 
   return plans.map(toWorkoutPlan);
 }
 
+export async function fetchExerciseLibrary(): Promise<ExerciseLibrary[]> {
+  const exercises = await prisma.exerciseLibrary.findMany({
+    orderBy: { name: "asc" },
+  });
+  return exercises.map(toExerciseLibrary);
+}
+
+export async function upsertExerciseInLibrary(name: string, type?: ExerciseType): Promise<ExerciseLibrary> {
+  const ex = await prisma.exerciseLibrary.upsert({
+    where: { name },
+    update: type ? { type } : {},
+    create: { name, ...(type ? { type } : {}) },
+  });
+  return toExerciseLibrary(ex);
+}
+
+export async function createExerciseInLibrary(
+  name: string,
+  muscleGroup: string,
+  type?: ExerciseType,
+  instructions?: string,
+): Promise<ExerciseLibrary> {
+  await requireAdmin();
+  const ex = await prisma.exerciseLibrary.create({
+    data: { name, muscleGroup, ...(type ? { type } : {}), ...(instructions ? { instructions } : {}) },
+  });
+  return toExerciseLibrary(ex);
+}
+
+export async function updateExerciseInLibrary(
+  id: string,
+  data: { name?: string; muscleGroup?: string; type?: ExerciseType | null; instructions?: string | null },
+): Promise<ExerciseLibrary> {
+  await requireAdmin();
+  const ex = await prisma.exerciseLibrary.update({ where: { id }, data });
+  return toExerciseLibrary(ex);
+}
+
+export async function deleteExerciseFromLibrary(id: string): Promise<void> {
+  await requireAdmin();
+  await prisma.exerciseLibrary.delete({ where: { id } });
+}
+
 export async function fetchWorkoutLog(userId: string, date?: string): Promise<WorkoutLogEntry[]> {
   const entries = await prisma.workoutLogEntry.findMany({
     where: { userId, ...(date ? { date } : {}) },
@@ -426,6 +517,7 @@ export async function fetchSettings(): Promise<GlobalSettings> {
 }
 
 export async function fetchAllUsers(): Promise<UserProfile[]> {
+  await requireAdmin();
   const users = await prisma.user.findMany({ orderBy: { createdAt: "asc" } });
   return users.map(toUserProfile);
 }
@@ -439,6 +531,9 @@ export async function registerUser(
   password: string,
   name: string,
 ): Promise<{ success: boolean; error?: string }> {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { success: false, error: "Invalid email address." };
+  }
   const emailConflict = await prisma.user.findFirst({ where: { email } });
   if (emailConflict) return { success: false, error: "An account with this email already exists." };
 
@@ -461,18 +556,22 @@ export async function registerUser(
 }
 
 export async function approveUser(id: string): Promise<void> {
+  await requireAdmin();
   await prisma.user.update({ where: { id }, data: { status: "approved" } });
 }
 
 export async function rejectUser(id: string): Promise<void> {
+  await requireAdmin();
   await prisma.user.update({ where: { id }, data: { status: "rejected" } });
 }
 
 export async function updateUserRole(id: string, role: UserRole): Promise<void> {
+  await requireAdmin();
   await prisma.user.update({ where: { id }, data: { role } });
 }
 
 export async function updateUserStatus(id: string, status: UserStatus): Promise<void> {
+  await requireAdmin();
   await prisma.user.update({ where: { id }, data: { status } });
 }
 

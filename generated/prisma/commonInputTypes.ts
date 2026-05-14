@@ -85,6 +85,13 @@ export type IntNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedIntNullableFilter<$PrismaModel> | number | null
 }
 
+export type EnumBiologicalSexNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.BiologicalSex | Prisma.EnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  in?: $Enums.BiologicalSex[] | Prisma.ListEnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.BiologicalSex[] | Prisma.ListEnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumBiologicalSexNullableFilter<$PrismaModel> | $Enums.BiologicalSex | null
+}
+
 export type EnumActivityLevelNullableFilter<$PrismaModel = never> = {
   equals?: $Enums.ActivityLevel | Prisma.EnumActivityLevelFieldRefInput<$PrismaModel> | null
   in?: $Enums.ActivityLevel[] | Prisma.ListEnumActivityLevelFieldRefInput<$PrismaModel> | null
@@ -216,6 +223,16 @@ export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _max?: Prisma.NestedIntNullableFilter<$PrismaModel>
+}
+
+export type EnumBiologicalSexNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BiologicalSex | Prisma.EnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  in?: $Enums.BiologicalSex[] | Prisma.ListEnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.BiologicalSex[] | Prisma.ListEnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumBiologicalSexNullableWithAggregatesFilter<$PrismaModel> | $Enums.BiologicalSex | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBiologicalSexNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBiologicalSexNullableFilter<$PrismaModel>
 }
 
 export type EnumActivityLevelNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -384,6 +401,23 @@ export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
   _max?: Prisma.NestedJsonFilter<$PrismaModel>
 }
 
+export type EnumExerciseTypeNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.ExerciseType | Prisma.EnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ExerciseType[] | Prisma.ListEnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ExerciseType[] | Prisma.ListEnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumExerciseTypeNullableFilter<$PrismaModel> | $Enums.ExerciseType | null
+}
+
+export type EnumExerciseTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ExerciseType | Prisma.EnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ExerciseType[] | Prisma.ListEnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ExerciseType[] | Prisma.ListEnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumExerciseTypeNullableWithAggregatesFilter<$PrismaModel> | $Enums.ExerciseType | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumExerciseTypeNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumExerciseTypeNullableFilter<$PrismaModel>
+}
+
 export type EnumTDEEFormulaFilter<$PrismaModel = never> = {
   equals?: $Enums.TDEEFormula | Prisma.EnumTDEEFormulaFieldRefInput<$PrismaModel>
   in?: $Enums.TDEEFormula[] | Prisma.ListEnumTDEEFormulaFieldRefInput<$PrismaModel>
@@ -468,6 +502,13 @@ export type NestedIntNullableFilter<$PrismaModel = never> = {
   gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
   gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
   not?: Prisma.NestedIntNullableFilter<$PrismaModel> | number | null
+}
+
+export type NestedEnumBiologicalSexNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.BiologicalSex | Prisma.EnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  in?: $Enums.BiologicalSex[] | Prisma.ListEnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.BiologicalSex[] | Prisma.ListEnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumBiologicalSexNullableFilter<$PrismaModel> | $Enums.BiologicalSex | null
 }
 
 export type NestedEnumActivityLevelNullableFilter<$PrismaModel = never> = {
@@ -607,6 +648,16 @@ export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedIntNullableFilter<$PrismaModel>
 }
 
+export type NestedEnumBiologicalSexNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BiologicalSex | Prisma.EnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  in?: $Enums.BiologicalSex[] | Prisma.ListEnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.BiologicalSex[] | Prisma.ListEnumBiologicalSexFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumBiologicalSexNullableWithAggregatesFilter<$PrismaModel> | $Enums.BiologicalSex | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBiologicalSexNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBiologicalSexNullableFilter<$PrismaModel>
+}
+
 export type NestedEnumActivityLevelNullableWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.ActivityLevel | Prisma.EnumActivityLevelFieldRefInput<$PrismaModel> | null
   in?: $Enums.ActivityLevel[] | Prisma.ListEnumActivityLevelFieldRefInput<$PrismaModel> | null
@@ -733,6 +784,23 @@ export type NestedJsonFilterBase<$PrismaModel = never> = {
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   gte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
+}
+
+export type NestedEnumExerciseTypeNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.ExerciseType | Prisma.EnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ExerciseType[] | Prisma.ListEnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ExerciseType[] | Prisma.ListEnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumExerciseTypeNullableFilter<$PrismaModel> | $Enums.ExerciseType | null
+}
+
+export type NestedEnumExerciseTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ExerciseType | Prisma.EnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ExerciseType[] | Prisma.ListEnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ExerciseType[] | Prisma.ListEnumExerciseTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumExerciseTypeNullableWithAggregatesFilter<$PrismaModel> | $Enums.ExerciseType | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumExerciseTypeNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumExerciseTypeNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumTDEEFormulaFilter<$PrismaModel = never> = {

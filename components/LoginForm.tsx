@@ -9,15 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
-import { Activity } from "lucide-react";
+import { Activity, Eye, EyeOff } from "lucide-react";
 
 const DEMO_CREDENTIALS = [
   { email: "member@demo.com", password: "member123", role: "User" },
   { email: "admin@demo.com", password: "admin123", role: "Admin" },
 ];
 
-function OAuthButton({ provider, label, icon, onClick, loading }: {
-  provider: string;
+function OAuthButton({ label, icon, onClick, loading }: {
   label: string;
   icon: React.ReactNode;
   onClick: () => void;
@@ -42,6 +41,7 @@ export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
@@ -56,7 +56,7 @@ export function LoginForm() {
     setLoading(true);
     const ok = await login(email.trim().toLowerCase(), password);
     if (!ok) {
-      setError("Invalid credentials, or your account is pending approval.");
+      setError("Invalid credentials.");
       setLoading(false);
     }
   }
@@ -84,7 +84,6 @@ export function LoginForm() {
         {/* OAuth providers */}
         <div className="space-y-2">
           <OAuthButton
-            provider="github"
             label="Continue with GitHub"
             loading={oauthLoading === "github"}
             onClick={() => handleOAuth("github")}
@@ -95,7 +94,6 @@ export function LoginForm() {
             }
           />
           <OAuthButton
-            provider="facebook"
             label="Continue with Facebook"
             loading={oauthLoading === "facebook"}
             onClick={() => handleOAuth("facebook")}
@@ -106,7 +104,6 @@ export function LoginForm() {
             }
           />
           <OAuthButton
-            provider="apple"
             label="Continue with Apple"
             loading={oauthLoading === "apple"}
             onClick={() => handleOAuth("apple")}
@@ -142,17 +139,28 @@ export function LoginForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                required
+                className="pr-9"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p role="alert" aria-live="assertive" className="text-xs text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
           </Button>
