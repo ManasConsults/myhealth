@@ -16,13 +16,13 @@ export default function WorkoutPage() {
   const [exerciseLibrary, setExerciseLibrary] = useState<ExerciseLibrary[]>([]);
 
   async function reloadPlans() {
-    if (user) setPlans(await fetchWorkoutPlans(user.id));
+    if (user) setPlans(await fetchWorkoutPlans());
   }
 
   async function reloadLog() {
     if (user) {
       const [entries, library] = await Promise.all([
-        fetchWorkoutLog(user.id),
+        fetchWorkoutLog(),
         fetchExerciseLibrary(),
       ]);
       setLog(entries);
@@ -53,11 +53,11 @@ export default function WorkoutPage() {
         </TabsList>
 
         <TabsContent value="log" className="mt-4">
-          <ExerciseLogger userId={user.id} log={log} plans={plans} exerciseLibrary={exerciseLibrary} onUpdate={reloadLog} />
+          <ExerciseLogger log={log} plans={plans} exerciseLibrary={exerciseLibrary} onUpdate={reloadLog} />
         </TabsContent>
 
         <TabsContent value="plans" className="mt-4">
-          <PlanBuilder userId={user.id} plans={plans} exerciseLibrary={exerciseLibrary} onUpdate={reloadPlans} />
+          <PlanBuilder plans={plans} exerciseLibrary={exerciseLibrary} onUpdate={reloadPlans} />
         </TabsContent>
 
         <TabsContent value="reports" className="mt-4">

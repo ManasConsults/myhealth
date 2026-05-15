@@ -35,7 +35,6 @@ export function ManualSetup({ onComplete, initialValues, initialTargets }: Props
     if (!user) return;
     startTransition(async () => {
       await saveManualProfile(
-        user.id,
         {
           weight: parseFloat(weight),
           height: parseFloat(height),

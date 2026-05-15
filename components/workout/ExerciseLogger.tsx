@@ -58,7 +58,6 @@ function addDays(iso: string, delta: number): string {
 type SetsMap = Record<string, WorkoutSet[]>;
 
 interface Props {
-  userId: string;
   log: WorkoutLogEntry[];
   plans: WorkoutPlan[];
   exerciseLibrary: ExerciseLibrary[];
@@ -67,7 +66,7 @@ interface Props {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function ExerciseLogger({ userId, log, plans, exerciseLibrary, onUpdate }: Props) {
+export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props) {
   const today = toLocalISO(new Date());
 
   // Ad-hoc dialog
@@ -80,6 +79,9 @@ export function ExerciseLogger({ userId, log, plans, exerciseLibrary, onUpdate }
   // Edit dialog
   const [editEntry, setEditEntry] = useState<WorkoutLogEntry | null>(null);
   const [editSets, setEditSets] = useState<WorkoutSet[]>([]);
+
+  // Clear day confirmation
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   // Plan log sheet
   const [planOpen, setPlanOpen] = useState(false);
@@ -134,7 +136,7 @@ export function ExerciseLogger({ userId, log, plans, exerciseLibrary, onUpdate }
   function handleLog(e: React.BaseSyntheticEvent) {
     e.preventDefault();
     startTransition(async () => {
-      await logWorkout(userId, exerciseName, sets, selectedDate, exerciseType ?? undefined);
+      await logWorkout(exerciseName, sets, selectedDate, exerciseType ?? undefined);
       setExerciseName("");
       setExerciseType(null);
       setSets([{ setNumber: 1, reps: 8, weight: 60 }]);
@@ -151,8 +153,13 @@ export function ExerciseLogger({ userId, log, plans, exerciseLibrary, onUpdate }
   }
 
   function handleClearDay() {
+    setConfirmClearOpen(true);
+  }
+
+  function handleClearDayConfirmed() {
+    setConfirmClearOpen(false);
     startTransition(async () => {
-      await clearWorkoutLogForDate(userId, selectedDate);
+      await clearWorkoutLogForDate(selectedDate);
       onUpdate();
     });
   }
@@ -264,7 +271,7 @@ export function ExerciseLogger({ userId, log, plans, exerciseLibrary, onUpdate }
       if (exSets?.length) entries.push({ exerciseName: ex, sets: exSets, date: selectedDate });
     }
     startTransition(async () => {
-      await logWorkoutsBatch(userId, entries);
+      await logWorkoutsBatch(entries);
       setPlanOpen(false);
       onUpdate();
     });
@@ -757,6 +764,26 @@ export function ExerciseLogger({ userId, log, plans, exerciseLibrary, onUpdate }
           </CardContent>
         </Card>
       </div>
+
+      {/* ── Clear day confirmation ─────────────────────────────── */}
+      <Dialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Clear workout log?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This will delete all exercises logged for {selectedLabel}. This cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setConfirmClearOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleClearDayConfirmed} disabled={isPending}>
+              Clear
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

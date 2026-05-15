@@ -42,7 +42,7 @@ export default function ProfilePage() {
   function handleModeSwitch(mode: PlanningMode) {
     if (!user) return;
     startTransition(async () => {
-      await setPlanningMode(user.id, mode);
+      await setPlanningMode(mode);
       await refreshUser();
     });
   }
@@ -66,7 +66,7 @@ export default function ProfilePage() {
   function handleSaveName() {
     if (!user) return;
     startTransition(async () => {
-      await updateFullName(user.id, nameValue);
+      await updateFullName(nameValue);
       setEditingName(false);
       await refreshUser();
     });

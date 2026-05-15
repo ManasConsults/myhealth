@@ -151,8 +151,15 @@ function toWorkoutLogEntry(e: DbWorkoutLogEntry): WorkoutLogEntry {
 }
 
 // ---------------------------------------------------------------------------
-// Authorization helper
+// Authorization helpers
 // ---------------------------------------------------------------------------
+
+async function requireAuth(): Promise<string> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) throw new Error("Unauthorized");
+  return userId;
+}
 
 async function requireAdmin(): Promise<void> {
   const session = await auth();
@@ -176,10 +183,10 @@ export async function loginUser(email: string, password: string): Promise<UserPr
 // ---------------------------------------------------------------------------
 
 export async function saveGuidedProfile(
-  userId: string,
   metrics: PhysicalMetrics,
   formula: GlobalSettings["tdeeFormula"]
 ): Promise<UserProfile> {
+  const userId = await requireAuth();
   const macroTargets = calcMacros(metrics, formula);
   const updated = await prisma.user.update({
     where: { id: userId },
@@ -202,10 +209,10 @@ export async function saveGuidedProfile(
 }
 
 export async function saveManualProfile(
-  userId: string,
   metrics: PhysicalMetrics,
   macroTargets: MacroTargets
 ): Promise<UserProfile> {
+  const userId = await requireAuth();
   const updated = await prisma.user.update({
     where: { id: userId },
     data: {
@@ -226,7 +233,8 @@ export async function saveManualProfile(
   return toUserProfile(updated);
 }
 
-export async function setPlanningMode(userId: string, mode: PlanningMode): Promise<UserProfile> {
+export async function setPlanningMode(mode: PlanningMode): Promise<UserProfile> {
+  const userId = await requireAuth();
   const updated = await prisma.user.update({
     where: { id: userId },
     data: { planningMode: mode },
@@ -234,7 +242,8 @@ export async function setPlanningMode(userId: string, mode: PlanningMode): Promi
   return toUserProfile(updated);
 }
 
-export async function updateFullName(userId: string, fullName: string): Promise<UserProfile> {
+export async function updateFullName(fullName: string): Promise<UserProfile> {
+  const userId = await requireAuth();
   const updated = await prisma.user.update({
     where: { id: userId },
     data: { fullName: fullName.trim() || null },
@@ -246,10 +255,11 @@ export async function updateFullName(userId: string, fullName: string): Promise<
 // Food log
 // ---------------------------------------------------------------------------
 
-export async function logFood(entry: Omit<FoodEntry, "id" | "createdAt">): Promise<FoodEntry> {
+export async function logFood(entry: Omit<FoodEntry, "id" | "createdAt" | "userId">): Promise<FoodEntry> {
+  const userId = await requireAuth();
   const created = await prisma.foodEntry.create({
     data: {
-      userId: entry.userId,
+      userId,
       date: entry.date,
       name: entry.name,
       calories: entry.calories,
@@ -263,20 +273,22 @@ export async function logFood(entry: Omit<FoodEntry, "id" | "createdAt">): Promi
 }
 
 export async function logFoodsBatch(
-  userId: string,
   date: string,
   foods: Array<Omit<FoodEntry, "id" | "createdAt" | "userId" | "date">>
 ): Promise<void> {
+  const userId = await requireAuth();
   await prisma.foodEntry.createMany({
     data: foods.map((f) => ({ userId, date, ...f })),
   });
 }
 
 export async function removeFood(id: string): Promise<void> {
-  await prisma.foodEntry.delete({ where: { id } });
+  const userId = await requireAuth();
+  await prisma.foodEntry.deleteMany({ where: { id, userId } });
 }
 
-export async function clearFoodLogForDate(userId: string, date: string): Promise<void> {
+export async function clearFoodLogForDate(date: string): Promise<void> {
+  const userId = await requireAuth();
   await prisma.foodEntry.deleteMany({ where: { userId, date } });
 }
 
@@ -284,13 +296,15 @@ export async function clearFoodLogForDate(userId: string, date: string): Promise
 // Water log
 // ---------------------------------------------------------------------------
 
-export async function logWater(userId: string, date: string, amountMl: number): Promise<WaterEntry> {
+export async function logWater(date: string, amountMl: number): Promise<WaterEntry> {
+  const userId = await requireAuth();
   const created = await prisma.waterEntry.create({ data: { userId, date, amountMl } });
   return toWaterEntry(created);
 }
 
 export async function removeWater(id: string): Promise<void> {
-  await prisma.waterEntry.delete({ where: { id } });
+  const userId = await requireAuth();
+  await prisma.waterEntry.deleteMany({ where: { id, userId } });
 }
 
 // ---------------------------------------------------------------------------
@@ -298,10 +312,10 @@ export async function removeWater(id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function createNutritionPlan(
-  userId: string,
   name: string,
   meals: NutritionPlanMeal[]
 ): Promise<NutritionPlan> {
+  const userId = await requireAuth();
   const created = await prisma.nutritionPlan.create({ data: { userId, name, meals: meals as unknown as Prisma.InputJsonValue } });
   return toNutritionPlan(created);
 }
@@ -311,12 +325,16 @@ export async function editNutritionPlan(
   name: string,
   meals: NutritionPlanMeal[]
 ): Promise<NutritionPlan> {
+  const userId = await requireAuth();
+  const existing = await prisma.nutritionPlan.findFirst({ where: { id, userId } });
+  if (!existing) throw new Error("Forbidden");
   const updated = await prisma.nutritionPlan.update({ where: { id }, data: { name, meals: meals as unknown as Prisma.InputJsonValue } });
   return toNutritionPlan(updated);
 }
 
 export async function removeNutritionPlan(id: string): Promise<void> {
-  await prisma.nutritionPlan.delete({ where: { id } });
+  const userId = await requireAuth();
+  await prisma.nutritionPlan.deleteMany({ where: { id, userId } });
 }
 
 // ---------------------------------------------------------------------------
@@ -324,10 +342,10 @@ export async function removeNutritionPlan(id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function createWorkoutPlan(
-  userId: string,
   name: string,
   days: WorkoutDay[]
 ): Promise<WorkoutPlan> {
+  const userId = await requireAuth();
   const created = await prisma.workoutPlan.create({ data: { userId, name, days: days as unknown as Prisma.InputJsonValue } });
   return toWorkoutPlan(created);
 }
@@ -337,12 +355,16 @@ export async function editWorkoutPlan(
   name: string,
   days: WorkoutDay[]
 ): Promise<WorkoutPlan> {
+  const userId = await requireAuth();
+  const existing = await prisma.workoutPlan.findFirst({ where: { id, userId } });
+  if (!existing) throw new Error("Forbidden");
   const updated = await prisma.workoutPlan.update({ where: { id }, data: { name, days: days as unknown as Prisma.InputJsonValue } });
   return toWorkoutPlan(updated);
 }
 
 export async function removeWorkoutPlan(id: string): Promise<void> {
-  await prisma.workoutPlan.delete({ where: { id } });
+  const userId = await requireAuth();
+  await prisma.workoutPlan.deleteMany({ where: { id, userId } });
 }
 
 // ---------------------------------------------------------------------------
@@ -350,12 +372,12 @@ export async function removeWorkoutPlan(id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function logWorkout(
-  userId: string,
   exerciseName: string,
   sets: WorkoutSet[],
   date: string,
   type?: ExerciseType
 ): Promise<WorkoutLogEntry> {
+  const userId = await requireAuth();
   const lib = await prisma.exerciseLibrary.upsert({
     where: { name: exerciseName },
     update: type ? { type } : {},
@@ -375,27 +397,27 @@ export async function logWorkout(
 }
 
 export async function removeWorkoutLogEntry(id: string): Promise<void> {
-  await prisma.workoutLogEntry.delete({ where: { id } });
+  const userId = await requireAuth();
+  await prisma.workoutLogEntry.deleteMany({ where: { id, userId } });
 }
 
-export async function clearWorkoutLogForDate(userId: string, date: string): Promise<void> {
+export async function clearWorkoutLogForDate(date: string): Promise<void> {
+  const userId = await requireAuth();
   await prisma.workoutLogEntry.deleteMany({ where: { userId, date } });
 }
 
 export async function updateWorkoutLogEntry(id: string, sets: WorkoutSet[]): Promise<WorkoutLogEntry | null> {
-  try {
-    const updated = await prisma.workoutLogEntry.update({ where: { id }, data: { sets: sets as unknown as Prisma.InputJsonValue } });
-    return toWorkoutLogEntry(updated);
-  } catch {
-    return null;
-  }
+  const userId = await requireAuth();
+  const existing = await prisma.workoutLogEntry.findFirst({ where: { id, userId } });
+  if (!existing) return null;
+  const updated = await prisma.workoutLogEntry.update({ where: { id }, data: { sets: sets as unknown as Prisma.InputJsonValue } });
+  return toWorkoutLogEntry(updated);
 }
 
 export async function logWorkoutsBatch(
-  userId: string,
   entries: Array<{ exerciseName: string; sets: WorkoutSet[]; date: string }>
 ): Promise<void> {
-  // Upsert all unique exercise names into the library first
+  const userId = await requireAuth();
   const uniqueNames = [...new Set(entries.map((e) => e.exerciseName))];
   await prisma.exerciseLibrary.createMany({
     data: uniqueNames.map((name) => ({ name })),
@@ -436,12 +458,14 @@ export async function updateGlobalSettings(patch: Partial<GlobalSettings>): Prom
 // Read actions
 // ---------------------------------------------------------------------------
 
-export async function fetchUser(userId: string): Promise<UserProfile | undefined> {
+export async function fetchUser(): Promise<UserProfile | undefined> {
+  const userId = await requireAuth();
   const user = await prisma.user.findUnique({ where: { id: userId } });
   return user ? toUserProfile(user) : undefined;
 }
 
-export async function fetchFoodLog(userId: string, date?: string): Promise<FoodEntry[]> {
+export async function fetchFoodLog(date?: string): Promise<FoodEntry[]> {
+  const userId = await requireAuth();
   const entries = await prisma.foodEntry.findMany({
     where: { userId, ...(date ? { date } : {}) },
     orderBy: { createdAt: "asc" },
@@ -449,7 +473,8 @@ export async function fetchFoodLog(userId: string, date?: string): Promise<FoodE
   return entries.map(toFoodEntry);
 }
 
-export async function fetchWaterLog(userId: string, date?: string): Promise<WaterEntry[]> {
+export async function fetchWaterLog(date?: string): Promise<WaterEntry[]> {
+  const userId = await requireAuth();
   const entries = await prisma.waterEntry.findMany({
     where: { userId, ...(date ? { date } : {}) },
     orderBy: { createdAt: "asc" },
@@ -457,7 +482,8 @@ export async function fetchWaterLog(userId: string, date?: string): Promise<Wate
   return entries.map(toWaterEntry);
 }
 
-export async function fetchNutritionPlans(userId: string): Promise<NutritionPlan[]> {
+export async function fetchNutritionPlans(): Promise<NutritionPlan[]> {
+  const userId = await requireAuth();
   const plans = await prisma.nutritionPlan.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
@@ -465,7 +491,8 @@ export async function fetchNutritionPlans(userId: string): Promise<NutritionPlan
   return plans.map(toNutritionPlan);
 }
 
-export async function fetchWorkoutPlans(userId: string): Promise<WorkoutPlan[]> {
+export async function fetchWorkoutPlans(): Promise<WorkoutPlan[]> {
+  const userId = await requireAuth();
   const plans = await prisma.workoutPlan.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
@@ -516,7 +543,8 @@ export async function deleteExerciseFromLibrary(id: string): Promise<void> {
   await prisma.exerciseLibrary.delete({ where: { id } });
 }
 
-export async function fetchWorkoutLog(userId: string, date?: string): Promise<WorkoutLogEntry[]> {
+export async function fetchWorkoutLog(date?: string): Promise<WorkoutLogEntry[]> {
+  const userId = await requireAuth();
   const entries = await prisma.workoutLogEntry.findMany({
     where: { userId, ...(date ? { date } : {}) },
     orderBy: { createdAt: "asc" },

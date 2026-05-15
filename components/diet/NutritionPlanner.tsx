@@ -76,7 +76,6 @@ const MEAL_ICONS: Record<MealType, string> = {
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface Props {
-  userId: string;
   plans: NutritionPlan[];
   onUpdate: () => void;
 }
@@ -103,7 +102,7 @@ function planTotals(meals: MealFoods) {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function NutritionPlanner({ userId, plans, onUpdate }: Props) {
+export function NutritionPlanner({ plans, onUpdate }: Props) {
   const [open, setOpen] = useState(false);
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -268,7 +267,7 @@ export function NutritionPlanner({ userId, plans, onUpdate }: Props) {
       if (editingPlanId) {
         await editNutritionPlan(editingPlanId, planName, planMeals);
       } else {
-        await createNutritionPlan(userId, planName, planMeals);
+        await createNutritionPlan(planName, planMeals);
       }
       setOpen(false);
       onUpdate();

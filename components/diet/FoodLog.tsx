@@ -45,9 +45,9 @@ const MEAL_ICONS: Record<MealType, string> = {
 };
 
 const MACRO_COLORS = {
-  protein: "text-blue-500",
-  carbs: "text-amber-500",
-  fat: "text-red-500",
+  protein: "text-chart-1",
+  carbs: "text-chart-3",
+  fat: "text-chart-4",
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -65,7 +65,6 @@ function fmtWater(ml: number): string {
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface Props {
-  userId: string;
   allEntries: FoodEntry[];
   waterLog: WaterEntry[];
   plans: NutritionPlan[];
@@ -75,7 +74,7 @@ interface Props {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onUpdate }: Props) {
+export function FoodLog({ allEntries, waterLog, plans, macroTargets, onUpdate }: Props) {
   const today = new Date().toISOString().split("T")[0];
 
   // Calendar state
@@ -233,7 +232,6 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
         await updateFoodServing(selectedFood.fdcId, foodUnit, parseFloat(foodGramsPerUnit));
       }
       await logFood({
-        userId,
         date: selectedDate,
         name: foodName,
         calories: parseInt(foodCal),
@@ -256,7 +254,7 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
 
   function handleClearDay() {
     startTransition(async () => {
-      await clearFoodLogForDate(userId, selectedDate);
+      await clearFoodLogForDate(selectedDate);
       setConfirmClear(false);
       onUpdate();
     });
@@ -266,7 +264,7 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
 
   function handleAddWater(ml: number) {
     startTransition(async () => {
-      await logWater(userId, selectedDate, ml);
+      await logWater(selectedDate, ml);
       onUpdate();
     });
   }
@@ -313,7 +311,7 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
       }))
     );
     startTransition(async () => {
-      await logFoodsBatch(userId, selectedDate, foods);
+      await logFoodsBatch(selectedDate, foods);
       setPlanOpen(false);
       onUpdate();
     });
@@ -481,7 +479,7 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
         <div className="rounded-xl border bg-card overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/30">
             <div className="flex items-center gap-2">
-              <Droplets className="w-4 h-4 text-blue-400" />
+              <Droplets className="w-4 h-4 text-chart-2" />
               <p className="text-sm font-semibold">Water</p>
               <Badge variant="secondary" className="text-xs font-normal">
                 {fmtWater(totalWaterMl)} / {fmtWater(WATER_TARGET_ML)}
@@ -492,7 +490,7 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
             {/* Progress bar */}
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full bg-blue-400 transition-all"
+                className="h-full rounded-full bg-chart-2 transition-all"
                 style={{ width: `${Math.min(100, (totalWaterMl / WATER_TARGET_ML) * 100)}%` }}
               />
             </div>
@@ -606,7 +604,7 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
                             {hasWater && (
                               <span className={[
                                 "w-1 h-1 rounded-full",
-                                isSelected ? "bg-primary-foreground" : "bg-blue-400",
+                                isSelected ? "bg-primary-foreground" : "bg-chart-2",
                               ].join(" ")} />
                             )}
                           </span>
@@ -625,7 +623,7 @@ export function FoodLog({ userId, allEntries, waterLog, plans, macroTargets, onU
                 <span className="text-[10px] text-muted-foreground">Food</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-blue-400" />
+                <span className="w-2 h-2 rounded-full bg-chart-2" />
                 <span className="text-[10px] text-muted-foreground">Water</span>
               </div>
             </div>

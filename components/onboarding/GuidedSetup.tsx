@@ -46,7 +46,7 @@ export function GuidedSetup({ formula, onComplete, initialValues }: Props) {
     e.preventDefault();
     if (!user) return;
     startTransition(async () => {
-      await saveGuidedProfile(user.id, metrics, formula);
+      await saveGuidedProfile(metrics, formula);
       await refreshUser();
       onComplete();
     });
