@@ -274,7 +274,7 @@ export function FoodLog({ allEntries, waterLog, plans, macroTargets, onUpdate }:
     const val = parseInt(waterInput);
     if (!val || val <= 0) return;
     startTransition(async () => {
-      await logWater(userId, selectedDate, val);
+      await logWater(selectedDate, val);
       setWaterInput("");
       onUpdate();
     });

@@ -1,6 +1,7 @@
 "use server";
 
 import { createHash } from "crypto";
+import { revalidatePath } from "next/cache";
 import { prisma } from "./db";
 import { auth } from "@/auth";
 import { calcMacros } from "./calculations";
@@ -188,6 +189,7 @@ export async function saveGuidedProfile(
 ): Promise<UserProfile> {
   const userId = await requireAuth();
   const macroTargets = calcMacros(metrics, formula);
+  revalidatePath("/dashboard");
   const updated = await prisma.user.update({
     where: { id: userId },
     data: {
@@ -213,6 +215,7 @@ export async function saveManualProfile(
   macroTargets: MacroTargets
 ): Promise<UserProfile> {
   const userId = await requireAuth();
+  revalidatePath("/dashboard");
   const updated = await prisma.user.update({
     where: { id: userId },
     data: {

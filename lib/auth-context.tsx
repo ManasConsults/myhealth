@@ -7,6 +7,7 @@ import { loginUser, fetchUser } from "./actions";
 
 interface AuthContextValue {
   user: UserProfile | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -54,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading: user === null && status !== "unauthenticated", login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -62,4 +64,49 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `**Preview deployed:** ${{ steps.deploy.outputs.url }}`
+            })
+
+  e2e:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright Chromium
+        run: node node_modules/@playwright/test/cli.js install chromium --with-deps
+
+      - name: Run E2E tests
+        run: node node_modules/@playwright/test/cli.js test
+        env:
+          BASE_URL: ${{ needs.deploy.outputs.url }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PREVIEW }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Comment E2E result on PR
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `**E2E tests failed.** Download the report from the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`
             })
