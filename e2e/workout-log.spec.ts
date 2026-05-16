@@ -1,13 +1,14 @@
 import { test, expect } from "./fixtures/auth";
+import type { Page } from "@playwright/test";
 
 // Programmatically submit the ad-hoc log dialog form, bypassing button-click
 // instability caused by the exercise name input's 150ms onBlur re-render.
-async function submitLogDialog(page: Parameters<typeof test>[1] extends infer F ? F extends (args: infer A) => unknown ? A extends { page: infer P } ? P : never : never : never) {
+async function submitLogDialog(page: Page) {
   await page.getByRole("dialog").locator("form").first().evaluate((form) => (form as HTMLFormElement).requestSubmit());
 }
 
 // Find the card for a given exercise and click its delete (trash) button.
-async function deleteExerciseCard(page: Parameters<typeof test>[1] extends infer F ? F extends (args: infer A) => unknown ? A extends { page: infer P } ? P : never : never : never, exerciseName: string) {
+async function deleteExerciseCard(page: Page, exerciseName: string) {
   const card = page.locator("[data-slot='card']").filter({
     has: page.locator("[data-slot='card-title']", { hasText: exerciseName }),
   });
