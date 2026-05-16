@@ -85,6 +85,11 @@ jobs:
       - name: Install Playwright Chromium
         run: node node_modules/@playwright/test/cli.js install chromium --with-deps
 
+      - name: Seed preview database
+        run: npm run db:seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PREVIEW }}
+
       - name: Run E2E tests
         run: node node_modules/@playwright/test/cli.js test
         env:
