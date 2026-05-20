@@ -454,7 +454,7 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
                   <div key={idx} className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground w-5 text-right shrink-0">{set.setNumber}</span>
                     <Input type="number" min={1} value={set.reps} onChange={(e) => updateSet(idx, "reps", parseInt(e.target.value) || 0)} className="w-20" placeholder="Reps" />
-                    <Input type="number" min={0} step="2.5" value={set.weight} onChange={(e) => updateSet(idx, "weight", parseFloat(e.target.value) || 0)} className="w-20" placeholder="kg" />
+                    <Input type="number" min={0} step="any" value={set.weight} onChange={(e) => updateSet(idx, "weight", parseFloat(e.target.value) || 0)} className="w-20" placeholder="kg" />
                     <span className="text-xs text-muted-foreground shrink-0">kg</span>
                     {sets.length > 1 && (
                       <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeSet(idx)}>
@@ -485,7 +485,7 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
                   <div key={idx} className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground w-5 text-right shrink-0">{set.setNumber}</span>
                     <Input type="number" min={1} value={set.reps} onChange={(e) => updateEditSet(idx, "reps", parseInt(e.target.value) || 0)} className="w-20" placeholder="Reps" />
-                    <Input type="number" min={0} step="2.5" value={set.weight} onChange={(e) => updateEditSet(idx, "weight", parseFloat(e.target.value) || 0)} className="w-20" placeholder="kg" />
+                    <Input type="number" min={0} step="any" value={set.weight} onChange={(e) => updateEditSet(idx, "weight", parseFloat(e.target.value) || 0)} className="w-20" placeholder="kg" />
                     <span className="text-xs text-muted-foreground shrink-0">kg</span>
                     {editSets.length > 1 && (
                       <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeEditSet(idx)}>
@@ -813,7 +813,7 @@ function ExerciseSetEditor({ exerciseName, sets, onAdd, onRemove, onUpdate }: Ed
             />
             <span className="text-xs text-muted-foreground shrink-0">reps</span>
             <Input
-              type="number" min={0} step="2.5" value={set.weight}
+              type="number" min={0} step="any" value={set.weight}
               onChange={(e) => onUpdate(i, "weight", parseFloat(e.target.value) || 0)}
               className="w-20 h-8 text-sm text-center px-1"
             />
