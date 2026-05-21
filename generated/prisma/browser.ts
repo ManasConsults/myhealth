@@ -58,6 +58,11 @@ export type WorkoutLogEntry = Prisma.WorkoutLogEntryModel
  */
 export type GlobalSettings = Prisma.GlobalSettingsModel
 /**
+ * Model Feedback
+ * 
+ */
+export type Feedback = Prisma.FeedbackModel
+/**
  * Model FoodCache
  * 
  */

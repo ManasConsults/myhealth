@@ -13,22 +13,23 @@ import { GlobalSettings } from "@/lib/types";
 import { Activity, Brain, Dumbbell } from "lucide-react";
 
 export default function OnboardingPage() {
-  const { user, refreshUser } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState<"choose" | "setup">("choose");
   const [mode, setMode] = useState<"guided" | "manual">("guided");
   const [settings, setSettings] = useState<GlobalSettings | null>(null);
 
   useEffect(() => {
+    if (loading) return;
     if (!user) router.replace("/");
     else if (user.onboardingComplete) router.replace("/dashboard");
-  }, [user, router]);
+  }, [user, loading, router]);
 
   useEffect(() => {
     void fetchSettings().then(setSettings);
   }, []);
 
-  if (!user) return null;
+  if (loading || !user) return null;
 
   function handleComplete() {
     refreshUser();

@@ -91,3 +91,21 @@ export const UserStatus = {
 } as const
 
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
+
+
+export const FeedbackStatus = {
+  pending: 'pending',
+  in_progress: 'in_progress',
+  resolved: 'resolved'
+} as const
+
+export type FeedbackStatus = (typeof FeedbackStatus)[keyof typeof FeedbackStatus]
+
+
+export const FeedbackCategory = {
+  bug: 'bug',
+  suggestion: 'suggestion',
+  other: 'other'
+} as const
+
+export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory]

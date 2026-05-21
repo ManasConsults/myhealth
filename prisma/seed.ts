@@ -27,18 +27,30 @@ async function main() {
   const member = await prisma.user.create({
     data: {
       id: "demo-user",
+      email: "member@demo.com",
       username: "member",
       password: hash("member123"),
       role: "user",
       status: "approved",
       planningMode: "guided",
-      onboardingComplete: false,
+      onboardingComplete: true,
+      weight: 75,
+      height: 175,
+      age: 28,
+      biologicalSex: "male",
+      activityLevel: "moderate",
+      goal: "maintenance",
+      targetCalories: 2500,
+      targetProtein: 150,
+      targetCarbs: 280,
+      targetFat: 70,
     },
   });
 
   await prisma.user.create({
     data: {
       id: "demo-admin",
+      email: "admin@demo.com",
       username: "admin",
       password: hash("admin123"),
       role: "admin",

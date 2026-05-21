@@ -26,13 +26,12 @@ const DAY_SHORT: Record<string, string> = {
 };
 
 interface Props {
-  userId: string;
   plans: WorkoutPlan[];
   exerciseLibrary: ExerciseLibrary[];
   onUpdate: () => void;
 }
 
-export function PlanBuilder({ userId, plans, exerciseLibrary, onUpdate }: Props) {
+export function PlanBuilder({ plans, exerciseLibrary, onUpdate }: Props) {
   const [open, setOpen] = useState(false);
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -127,7 +126,7 @@ export function PlanBuilder({ userId, plans, exerciseLibrary, onUpdate }: Props)
       if (editingPlanId) {
         await editWorkoutPlan(editingPlanId, planName, days);
       } else {
-        await createWorkoutPlan(userId, planName, days);
+        await createWorkoutPlan(planName, days);
       }
       setOpen(false);
       onUpdate();

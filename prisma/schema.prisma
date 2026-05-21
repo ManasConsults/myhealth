@@ -64,10 +64,23 @@ enum UserStatus {
   rejected
 }
 
+enum FeedbackStatus {
+  pending
+  in_progress
+  resolved
+}
+
+enum FeedbackCategory {
+  bug
+  suggestion
+  other
+}
+
 model User {
   id                 String         @id @default(cuid())
   email              String?        @unique
   username           String         @unique
+  fullName           String?
   password           String?
   role               UserRole       @default(user)
   planningMode       PlanningMode   @default(guided)
@@ -90,6 +103,7 @@ model User {
   nutritionPlans     NutritionPlan[]
   workoutPlans       WorkoutPlan[]
   workoutLog         WorkoutLogEntry[]
+  feedback           Feedback[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 }
@@ -175,6 +189,22 @@ model WorkoutLogEntry {
 model GlobalSettings {
   id          String      @id @default("global")
   tdeeFormula TDEEFormula @default(mifflin_st_jeor)
+}
+
+model Feedback {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  category   FeedbackCategory @default(other)
+  message    String
+  status     FeedbackStatus   @default(pending)
+  adminNote  String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 
 // Cache for USDA FoodData Central search results — populated on first search, never updated

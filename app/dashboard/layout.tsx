@@ -6,16 +6,15 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
-      router.replace("/");
-    }
-  }, [user, router]);
+    if (loading) return;
+    if (!user) router.replace("/");
+  }, [user, loading, router]);
 
-  if (!user) return null;
+  if (loading || !user) return null;
 
   return <AppShell>{children}</AppShell>;
 }

@@ -7,6 +7,7 @@ import { loginUser, fetchUser } from "./actions";
 
 interface AuthContextValue {
   user: UserProfile | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -21,8 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Restore full UserProfile from Auth.js session on page load / refresh.
   useEffect(() => {
     if (status === "loading") return;
-    if (status === "authenticated" && session?.user?.id) {
-      fetchUser(session.user.id).then((profile) => setUser(profile ?? null));
+    if (status === "authenticated") {
+      fetchUser().then((profile) => setUser(profile ?? null));
     } else if (status === "unauthenticated") {
       setUser(null); // eslint-disable-line react-hooks/set-state-in-effect
     }
@@ -48,14 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function refreshUser(): Promise<void> {
-    const id = user?.id ?? session?.user?.id;
-    if (!id) return;
-    const fresh = await fetchUser(id);
+    if (!user && !session?.user?.id) return;
+    const fresh = await fetchUser();
     if (fresh) setUser({ ...fresh });
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading: user === null && status !== "unauthenticated", login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

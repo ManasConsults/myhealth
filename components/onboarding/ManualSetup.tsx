@@ -7,33 +7,34 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { saveManualProfile } from "@/lib/actions";
 import { useAuth } from "@/lib/auth-context";
-import { ActivityLevel, BiologicalSex, Goal } from "@/lib/types";
+import { ActivityLevel, BiologicalSex, Goal, MacroTargets, PhysicalMetrics } from "@/lib/types";
 
 interface Props {
   onComplete: () => void;
+  initialValues?: PhysicalMetrics;
+  initialTargets?: MacroTargets;
 }
 
-export function ManualSetup({ onComplete }: Props) {
+export function ManualSetup({ onComplete, initialValues, initialTargets }: Props) {
   const { user, refreshUser } = useAuth();
   const [isPending, startTransition] = useTransition();
 
-  const [weight, setWeight] = useState("70");
-  const [height, setHeight] = useState("170");
-  const [age, setAge] = useState("25");
-  const [biologicalSex, setBiologicalSex] = useState<BiologicalSex>("male");
-  const [goal, setGoal] = useState<Goal>("maintenance");
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel>("moderate");
-  const [calories, setCalories] = useState("2000");
-  const [protein, setProtein] = useState("150");
-  const [carbs, setCarbs] = useState("200");
-  const [fat, setFat] = useState("65");
+  const [weight, setWeight] = useState(initialValues ? String(initialValues.weight) : "70");
+  const [height, setHeight] = useState(initialValues ? String(initialValues.height) : "170");
+  const [age, setAge] = useState(initialValues ? String(initialValues.age) : "25");
+  const [biologicalSex, setBiologicalSex] = useState<BiologicalSex>(initialValues?.biologicalSex ?? "male");
+  const [goal, setGoal] = useState<Goal>(initialValues?.goal ?? "maintenance");
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(initialValues?.activityLevel ?? "moderate");
+  const [calories, setCalories] = useState(initialTargets ? String(initialTargets.calories) : "2000");
+  const [protein, setProtein] = useState(initialTargets ? String(initialTargets.protein) : "150");
+  const [carbs, setCarbs] = useState(initialTargets ? String(initialTargets.carbs) : "200");
+  const [fat, setFat] = useState(initialTargets ? String(initialTargets.fat) : "65");
 
   function handleSubmit(e: React.BaseSyntheticEvent) {
     e.preventDefault();
     if (!user) return;
     startTransition(async () => {
       await saveManualProfile(
-        user.id,
         {
           weight: parseFloat(weight),
           height: parseFloat(height),

@@ -1,11 +1,13 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { useAuth } from "@/lib/auth-context";
 import {
   Activity,
@@ -13,7 +15,8 @@ import {
   Dumbbell,
   LayoutDashboard,
   LogOut,
-  Settings,
+  MessageSquare,
+  UserCircle,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,17 +33,16 @@ const NAV: NavItem[] = [
   { href: "/dashboard/nutrition", label: "Nutrition", icon: Apple },
   { href: "/dashboard/workout", label: "Workout", icon: Dumbbell },
   { href: "/dashboard/admin", label: "Admin", icon: Users, adminOnly: true },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   function handleLogout() {
     logout();
-    router.push("/");
   }
 
   const visibleNav = NAV.filter((n) => !n.adminOnly || user?.role === "admin");
@@ -69,11 +71,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="mt-auto space-y-2 pt-4">
           <Separator />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+            onClick={() => setFeedbackOpen(true)}
+          >
+            <MessageSquare className="w-4 h-4" /> Feedback
+          </Button>
           <div className="flex items-center justify-between px-2 py-1">
-            <div className="min-w-0">
+            <Link href="/dashboard/profile" className="min-w-0 hover:opacity-70 transition-opacity">
               <p className="text-xs font-semibold truncate">{user?.username}</p>
               <Badge variant="secondary" className="text-[10px] mt-0.5 capitalize px-1.5 py-0">{user?.role}</Badge>
-            </div>
+            </Link>
             <ThemeToggle />
           </div>
           <Button
@@ -98,6 +108,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="font-bold">MyHealth</span>
           </div>
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setFeedbackOpen(true)}
+              aria-label="Feedback"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </Button>
             <ThemeToggle />
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout} aria-label="Log out">
               <LogOut className="w-4 h-4" />
@@ -131,6 +150,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
       </div>
+
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </div>
   );
 }

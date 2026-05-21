@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { GlobalSettingsPanel } from "@/components/admin/GlobalSettings";
 import { ExerciseLibraryManager } from "@/components/admin/ExerciseLibraryManager";
+import { FeedbackManager } from "@/components/admin/FeedbackManager";
 import { useAuth } from "@/lib/auth-context";
-import { fetchAllUsers, fetchSettings, fetchExerciseLibrary } from "@/lib/actions";
-import { ExerciseLibrary, GlobalSettings, UserProfile } from "@/lib/types";
+import { fetchAllUsers, fetchSettings, fetchExerciseLibrary, fetchAllFeedback } from "@/lib/actions";
+import { ExerciseLibrary, Feedback, GlobalSettings, UserProfile } from "@/lib/types";
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [settings, setSettings] = useState<GlobalSettings | null>(null);
   const [library, setLibrary] = useState<ExerciseLibrary[]>([]);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
 
   useEffect(() => {
     if (user && user.role !== "admin") router.replace("/dashboard");
@@ -27,6 +29,7 @@ export default function AdminPage() {
       void fetchAllUsers().then(setUsers);
       void fetchSettings().then(setSettings);
       void fetchExerciseLibrary().then(setLibrary);
+      void fetchAllFeedback().then(setFeedback);
     }
   }, [user]);
 
@@ -44,6 +47,7 @@ export default function AdminPage() {
           <TabsTrigger value="users" className="flex-1 sm:flex-none">User Management</TabsTrigger>
           <TabsTrigger value="exercises" className="flex-1 sm:flex-none">Exercise Library</TabsTrigger>
           <TabsTrigger value="settings" className="flex-1 sm:flex-none">Global Settings</TabsTrigger>
+          <TabsTrigger value="feedback" className="flex-1 sm:flex-none">Feedback</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="mt-4">
@@ -78,6 +82,20 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <GlobalSettingsPanel settings={settings} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="feedback" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">User Feedback</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FeedbackManager
+                feedback={feedback}
+                onUpdate={() => void fetchAllFeedback().then(setFeedback)}
+              />
             </CardContent>
           </Card>
         </TabsContent>

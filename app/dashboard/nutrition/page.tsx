@@ -16,15 +16,15 @@ export default function NutritionPage() {
   const [plans, setPlans] = useState<NutritionPlan[]>([]);
 
   async function reloadFood() {
-    if (user) setAllEntries(await fetchFoodLog(user.id));
+    if (user) setAllEntries(await fetchFoodLog());
   }
 
   async function reloadWater() {
-    if (user) setWaterLog(await fetchWaterLog(user.id));
+    if (user) setWaterLog(await fetchWaterLog());
   }
 
   async function reloadPlans() {
-    if (user) setPlans(await fetchNutritionPlans(user.id));
+    if (user) setPlans(await fetchNutritionPlans());
   }
 
   async function reloadAll() {
@@ -56,7 +56,6 @@ export default function NutritionPage() {
 
         <TabsContent value="log" className="mt-4">
           <FoodLog
-            userId={user.id}
             allEntries={allEntries}
             waterLog={waterLog}
             plans={plans}
@@ -66,7 +65,7 @@ export default function NutritionPage() {
         </TabsContent>
 
         <TabsContent value="plans" className="mt-4">
-          <NutritionPlanner userId={user.id} plans={plans} onUpdate={reloadPlans} />
+          <NutritionPlanner plans={plans} onUpdate={reloadPlans} />
         </TabsContent>
 
         <TabsContent value="reports" className="mt-4">

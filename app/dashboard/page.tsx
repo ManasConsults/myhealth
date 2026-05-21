@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { MacroDonut } from "@/components/MacroDonut";
 import { useAuth } from "@/lib/auth-context";
-import { fetchFoodLog } from "@/lib/actions";
+import { fetchFoodLog, fetchWorkoutLog } from "@/lib/actions";
 import { useDailyTotals, useRemainingMacros } from "@/hooks/useCalculations";
-import { FoodEntry, GOAL_LABELS } from "@/lib/types";
+import { FoodEntry, GOAL_LABELS, WorkoutLogEntry } from "@/lib/types";
 import { Apple, Dumbbell, Flame, Target } from "lucide-react";
 
 const MACRO_COLORS = {
@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [entries, setEntries] = useState<FoodEntry[]>([]);
+  const [workoutLog, setWorkoutLog] = useState<WorkoutLogEntry[]>([]);
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
@@ -28,7 +29,10 @@ export default function DashboardPage() {
   }, [user, router]);
 
   useEffect(() => {
-    if (user) void fetchFoodLog(user.id, today).then(setEntries);
+    if (user) {
+      void fetchFoodLog(today).then(setEntries);
+      void fetchWorkoutLog(today).then(setWorkoutLog);
+    }
   }, [user, today]);
 
   const totals = useDailyTotals(entries);
@@ -38,6 +42,7 @@ export default function DashboardPage() {
 
   const calorieTarget = user.macroTargets?.calories ?? 0;
   const caloriePct = calorieTarget > 0 ? Math.min(100, (totals.calories / calorieTarget) * 100) : 0;
+  const totalSets = workoutLog.reduce((sum, e) => sum + e.sets.length, 0);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -79,9 +84,9 @@ export default function DashboardPage() {
           {
             icon: <Dumbbell className="w-4 h-4" />,
             iconClass: "text-violet-500 bg-violet-500/10",
-            label: "Mode",
-            value: user.planningMode === "guided" ? "Smart Engine" : "Expert Mode",
-            sub: "planning mode",
+            label: "Exercises",
+            value: `${workoutLog.length}`,
+            sub: totalSets > 0 ? `${totalSets} sets today` : "none logged",
             delay: 260,
           },
         ].map((stat) => (
@@ -157,8 +162,53 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Workout log */}
+      <div className="animate-fade-up" style={{ animationDelay: "440ms" }}>
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium">Today&apos;s Workout</CardTitle>
+              <span className="text-xs text-muted-foreground">
+                {workoutLog.length > 0 ? `${workoutLog.length} exercise${workoutLog.length === 1 ? "" : "s"} · ${totalSets} sets` : "No workout logged"}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-4">
+            {workoutLog.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No exercises logged yet today.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {workoutLog.map((entry) => (
+                  <li key={entry.id} className="flex items-center justify-between gap-3 py-1.5 border-b last:border-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="p-1.5 rounded-md bg-violet-500/10 shrink-0">
+                        <Dumbbell className="w-3.5 h-3.5 text-violet-500" />
+                      </div>
+                      <span className="text-sm font-medium truncate">{entry.exerciseName}</span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-sm font-semibold tabular-nums">{entry.sets.length}</span>
+                      <span className="text-xs text-muted-foreground ml-1">
+                        {entry.sets.length === 1 ? "set" : "sets"}
+                      </span>
+                      {entry.sets.length > 0 && (
+                        <p className="text-xs text-muted-foreground tabular-nums">
+                          {entry.sets[entry.sets.length - 1].weight}kg × {entry.sets[entry.sets.length - 1].reps}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-3 animate-fade-up" style={{ animationDelay: "440ms" }}>
+      <div className="grid grid-cols-2 gap-3 animate-fade-up" style={{ animationDelay: "500ms" }}>
         <button onClick={() => router.push("/dashboard/nutrition")} className="text-left w-full">
           <Card>
             <CardContent className="flex items-center gap-3 py-4">

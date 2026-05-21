@@ -99,3 +99,4 @@ Before merging / deploying, replace step 3 with `npm run db:migrate` to create a
 | admin    | admin123  | admin |
 
 New registrations default to `pending` status and must be approved by an admin before they can log in.
+

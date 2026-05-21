@@ -50,6 +50,7 @@ export type UserMinAggregateOutputType = {
   id: string | null
   email: string | null
   username: string | null
+  fullName: string | null
   password: string | null
   role: $Enums.UserRole | null
   planningMode: $Enums.PlanningMode | null
@@ -73,6 +74,7 @@ export type UserMaxAggregateOutputType = {
   id: string | null
   email: string | null
   username: string | null
+  fullName: string | null
   password: string | null
   role: $Enums.UserRole | null
   planningMode: $Enums.PlanningMode | null
@@ -96,6 +98,7 @@ export type UserCountAggregateOutputType = {
   id: number
   email: number
   username: number
+  fullName: number
   password: number
   role: number
   planningMode: number
@@ -141,6 +144,7 @@ export type UserMinAggregateInputType = {
   id?: true
   email?: true
   username?: true
+  fullName?: true
   password?: true
   role?: true
   planningMode?: true
@@ -164,6 +168,7 @@ export type UserMaxAggregateInputType = {
   id?: true
   email?: true
   username?: true
+  fullName?: true
   password?: true
   role?: true
   planningMode?: true
@@ -187,6 +192,7 @@ export type UserCountAggregateInputType = {
   id?: true
   email?: true
   username?: true
+  fullName?: true
   password?: true
   role?: true
   planningMode?: true
@@ -297,6 +303,7 @@ export type UserGroupByOutputType = {
   id: string
   email: string | null
   username: string
+  fullName: string | null
   password: string | null
   role: $Enums.UserRole
   planningMode: $Enums.PlanningMode
@@ -343,6 +350,7 @@ export type UserWhereInput = {
   id?: Prisma.StringFilter<"User"> | string
   email?: Prisma.StringNullableFilter<"User"> | string | null
   username?: Prisma.StringFilter<"User"> | string
+  fullName?: Prisma.StringNullableFilter<"User"> | string | null
   password?: Prisma.StringNullableFilter<"User"> | string | null
   role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFilter<"User"> | $Enums.PlanningMode
@@ -365,12 +373,14 @@ export type UserWhereInput = {
   nutritionPlans?: Prisma.NutritionPlanListRelationFilter
   workoutPlans?: Prisma.WorkoutPlanListRelationFilter
   workoutLog?: Prisma.WorkoutLogEntryListRelationFilter
+  feedback?: Prisma.FeedbackListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   username?: Prisma.SortOrder
+  fullName?: Prisma.SortOrderInput | Prisma.SortOrder
   password?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
   planningMode?: Prisma.SortOrder
@@ -393,6 +403,7 @@ export type UserOrderByWithRelationInput = {
   nutritionPlans?: Prisma.NutritionPlanOrderByRelationAggregateInput
   workoutPlans?: Prisma.WorkoutPlanOrderByRelationAggregateInput
   workoutLog?: Prisma.WorkoutLogEntryOrderByRelationAggregateInput
+  feedback?: Prisma.FeedbackOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -402,6 +413,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
+  fullName?: Prisma.StringNullableFilter<"User"> | string | null
   password?: Prisma.StringNullableFilter<"User"> | string | null
   role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFilter<"User"> | $Enums.PlanningMode
@@ -424,12 +436,14 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   nutritionPlans?: Prisma.NutritionPlanListRelationFilter
   workoutPlans?: Prisma.WorkoutPlanListRelationFilter
   workoutLog?: Prisma.WorkoutLogEntryListRelationFilter
+  feedback?: Prisma.FeedbackListRelationFilter
 }, "id" | "email" | "username">
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   username?: Prisma.SortOrder
+  fullName?: Prisma.SortOrderInput | Prisma.SortOrder
   password?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
   planningMode?: Prisma.SortOrder
@@ -461,6 +475,7 @@ export type UserScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"User"> | string
   email?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   username?: Prisma.StringWithAggregatesFilter<"User"> | string
+  fullName?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   password?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   role?: Prisma.EnumUserRoleWithAggregatesFilter<"User"> | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeWithAggregatesFilter<"User"> | $Enums.PlanningMode
@@ -484,6 +499,7 @@ export type UserCreateInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -506,12 +522,14 @@ export type UserCreateInput = {
   nutritionPlans?: Prisma.NutritionPlanCreateNestedManyWithoutUserInput
   workoutPlans?: Prisma.WorkoutPlanCreateNestedManyWithoutUserInput
   workoutLog?: Prisma.WorkoutLogEntryCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -534,12 +552,14 @@ export type UserUncheckedCreateInput = {
   nutritionPlans?: Prisma.NutritionPlanUncheckedCreateNestedManyWithoutUserInput
   workoutPlans?: Prisma.WorkoutPlanUncheckedCreateNestedManyWithoutUserInput
   workoutLog?: Prisma.WorkoutLogEntryUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -562,12 +582,14 @@ export type UserUpdateInput = {
   nutritionPlans?: Prisma.NutritionPlanUpdateManyWithoutUserNestedInput
   workoutPlans?: Prisma.WorkoutPlanUpdateManyWithoutUserNestedInput
   workoutLog?: Prisma.WorkoutLogEntryUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -590,12 +612,14 @@ export type UserUncheckedUpdateInput = {
   nutritionPlans?: Prisma.NutritionPlanUncheckedUpdateManyWithoutUserNestedInput
   workoutPlans?: Prisma.WorkoutPlanUncheckedUpdateManyWithoutUserNestedInput
   workoutLog?: Prisma.WorkoutLogEntryUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -619,6 +643,7 @@ export type UserUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -642,6 +667,7 @@ export type UserUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -665,6 +691,7 @@ export type UserCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   username?: Prisma.SortOrder
+  fullName?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   planningMode?: Prisma.SortOrder
@@ -698,6 +725,7 @@ export type UserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   username?: Prisma.SortOrder
+  fullName?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   planningMode?: Prisma.SortOrder
@@ -721,6 +749,7 @@ export type UserMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
   username?: Prisma.SortOrder
+  fullName?: Prisma.SortOrder
   password?: Prisma.SortOrder
   role?: Prisma.SortOrder
   planningMode?: Prisma.SortOrder
@@ -881,10 +910,25 @@ export type UserUpdateOneRequiredWithoutWorkoutLogNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWorkoutLogInput, Prisma.UserUpdateWithoutWorkoutLogInput>, Prisma.UserUncheckedUpdateWithoutWorkoutLogInput>
 }
 
+export type UserCreateNestedOneWithoutFeedbackInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFeedbackInput, Prisma.UserUncheckedCreateWithoutFeedbackInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFeedbackInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutFeedbackNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFeedbackInput, Prisma.UserUncheckedCreateWithoutFeedbackInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFeedbackInput
+  upsert?: Prisma.UserUpsertWithoutFeedbackInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutFeedbackInput, Prisma.UserUpdateWithoutFeedbackInput>, Prisma.UserUncheckedUpdateWithoutFeedbackInput>
+}
+
 export type UserCreateWithoutFoodEntriesInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -906,12 +950,14 @@ export type UserCreateWithoutFoodEntriesInput = {
   nutritionPlans?: Prisma.NutritionPlanCreateNestedManyWithoutUserInput
   workoutPlans?: Prisma.WorkoutPlanCreateNestedManyWithoutUserInput
   workoutLog?: Prisma.WorkoutLogEntryCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutFoodEntriesInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -933,6 +979,7 @@ export type UserUncheckedCreateWithoutFoodEntriesInput = {
   nutritionPlans?: Prisma.NutritionPlanUncheckedCreateNestedManyWithoutUserInput
   workoutPlans?: Prisma.WorkoutPlanUncheckedCreateNestedManyWithoutUserInput
   workoutLog?: Prisma.WorkoutLogEntryUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutFoodEntriesInput = {
@@ -955,6 +1002,7 @@ export type UserUpdateWithoutFoodEntriesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -976,12 +1024,14 @@ export type UserUpdateWithoutFoodEntriesInput = {
   nutritionPlans?: Prisma.NutritionPlanUpdateManyWithoutUserNestedInput
   workoutPlans?: Prisma.WorkoutPlanUpdateManyWithoutUserNestedInput
   workoutLog?: Prisma.WorkoutLogEntryUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFoodEntriesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -1003,12 +1053,14 @@ export type UserUncheckedUpdateWithoutFoodEntriesInput = {
   nutritionPlans?: Prisma.NutritionPlanUncheckedUpdateManyWithoutUserNestedInput
   workoutPlans?: Prisma.WorkoutPlanUncheckedUpdateManyWithoutUserNestedInput
   workoutLog?: Prisma.WorkoutLogEntryUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWaterEntriesInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -1030,12 +1082,14 @@ export type UserCreateWithoutWaterEntriesInput = {
   nutritionPlans?: Prisma.NutritionPlanCreateNestedManyWithoutUserInput
   workoutPlans?: Prisma.WorkoutPlanCreateNestedManyWithoutUserInput
   workoutLog?: Prisma.WorkoutLogEntryCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWaterEntriesInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -1057,6 +1111,7 @@ export type UserUncheckedCreateWithoutWaterEntriesInput = {
   nutritionPlans?: Prisma.NutritionPlanUncheckedCreateNestedManyWithoutUserInput
   workoutPlans?: Prisma.WorkoutPlanUncheckedCreateNestedManyWithoutUserInput
   workoutLog?: Prisma.WorkoutLogEntryUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWaterEntriesInput = {
@@ -1079,6 +1134,7 @@ export type UserUpdateWithoutWaterEntriesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -1100,12 +1156,14 @@ export type UserUpdateWithoutWaterEntriesInput = {
   nutritionPlans?: Prisma.NutritionPlanUpdateManyWithoutUserNestedInput
   workoutPlans?: Prisma.WorkoutPlanUpdateManyWithoutUserNestedInput
   workoutLog?: Prisma.WorkoutLogEntryUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWaterEntriesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -1127,12 +1185,14 @@ export type UserUncheckedUpdateWithoutWaterEntriesInput = {
   nutritionPlans?: Prisma.NutritionPlanUncheckedUpdateManyWithoutUserNestedInput
   workoutPlans?: Prisma.WorkoutPlanUncheckedUpdateManyWithoutUserNestedInput
   workoutLog?: Prisma.WorkoutLogEntryUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutNutritionPlansInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -1154,12 +1214,14 @@ export type UserCreateWithoutNutritionPlansInput = {
   waterEntries?: Prisma.WaterEntryCreateNestedManyWithoutUserInput
   workoutPlans?: Prisma.WorkoutPlanCreateNestedManyWithoutUserInput
   workoutLog?: Prisma.WorkoutLogEntryCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNutritionPlansInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -1181,6 +1243,7 @@ export type UserUncheckedCreateWithoutNutritionPlansInput = {
   waterEntries?: Prisma.WaterEntryUncheckedCreateNestedManyWithoutUserInput
   workoutPlans?: Prisma.WorkoutPlanUncheckedCreateNestedManyWithoutUserInput
   workoutLog?: Prisma.WorkoutLogEntryUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNutritionPlansInput = {
@@ -1203,6 +1266,7 @@ export type UserUpdateWithoutNutritionPlansInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -1224,12 +1288,14 @@ export type UserUpdateWithoutNutritionPlansInput = {
   waterEntries?: Prisma.WaterEntryUpdateManyWithoutUserNestedInput
   workoutPlans?: Prisma.WorkoutPlanUpdateManyWithoutUserNestedInput
   workoutLog?: Prisma.WorkoutLogEntryUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNutritionPlansInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -1251,12 +1317,14 @@ export type UserUncheckedUpdateWithoutNutritionPlansInput = {
   waterEntries?: Prisma.WaterEntryUncheckedUpdateManyWithoutUserNestedInput
   workoutPlans?: Prisma.WorkoutPlanUncheckedUpdateManyWithoutUserNestedInput
   workoutLog?: Prisma.WorkoutLogEntryUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWorkoutPlansInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -1278,12 +1346,14 @@ export type UserCreateWithoutWorkoutPlansInput = {
   waterEntries?: Prisma.WaterEntryCreateNestedManyWithoutUserInput
   nutritionPlans?: Prisma.NutritionPlanCreateNestedManyWithoutUserInput
   workoutLog?: Prisma.WorkoutLogEntryCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWorkoutPlansInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -1305,6 +1375,7 @@ export type UserUncheckedCreateWithoutWorkoutPlansInput = {
   waterEntries?: Prisma.WaterEntryUncheckedCreateNestedManyWithoutUserInput
   nutritionPlans?: Prisma.NutritionPlanUncheckedCreateNestedManyWithoutUserInput
   workoutLog?: Prisma.WorkoutLogEntryUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWorkoutPlansInput = {
@@ -1327,6 +1398,7 @@ export type UserUpdateWithoutWorkoutPlansInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -1348,12 +1420,14 @@ export type UserUpdateWithoutWorkoutPlansInput = {
   waterEntries?: Prisma.WaterEntryUpdateManyWithoutUserNestedInput
   nutritionPlans?: Prisma.NutritionPlanUpdateManyWithoutUserNestedInput
   workoutLog?: Prisma.WorkoutLogEntryUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWorkoutPlansInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -1375,12 +1449,14 @@ export type UserUncheckedUpdateWithoutWorkoutPlansInput = {
   waterEntries?: Prisma.WaterEntryUncheckedUpdateManyWithoutUserNestedInput
   nutritionPlans?: Prisma.NutritionPlanUncheckedUpdateManyWithoutUserNestedInput
   workoutLog?: Prisma.WorkoutLogEntryUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWorkoutLogInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -1402,12 +1478,14 @@ export type UserCreateWithoutWorkoutLogInput = {
   waterEntries?: Prisma.WaterEntryCreateNestedManyWithoutUserInput
   nutritionPlans?: Prisma.NutritionPlanCreateNestedManyWithoutUserInput
   workoutPlans?: Prisma.WorkoutPlanCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWorkoutLogInput = {
   id?: string
   email?: string | null
   username: string
+  fullName?: string | null
   password?: string | null
   role?: $Enums.UserRole
   planningMode?: $Enums.PlanningMode
@@ -1429,6 +1507,7 @@ export type UserUncheckedCreateWithoutWorkoutLogInput = {
   waterEntries?: Prisma.WaterEntryUncheckedCreateNestedManyWithoutUserInput
   nutritionPlans?: Prisma.NutritionPlanUncheckedCreateNestedManyWithoutUserInput
   workoutPlans?: Prisma.WorkoutPlanUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWorkoutLogInput = {
@@ -1451,6 +1530,7 @@ export type UserUpdateWithoutWorkoutLogInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -1472,12 +1552,14 @@ export type UserUpdateWithoutWorkoutLogInput = {
   waterEntries?: Prisma.WaterEntryUpdateManyWithoutUserNestedInput
   nutritionPlans?: Prisma.NutritionPlanUpdateManyWithoutUserNestedInput
   workoutPlans?: Prisma.WorkoutPlanUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWorkoutLogInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
@@ -1499,6 +1581,139 @@ export type UserUncheckedUpdateWithoutWorkoutLogInput = {
   waterEntries?: Prisma.WaterEntryUncheckedUpdateManyWithoutUserNestedInput
   nutritionPlans?: Prisma.NutritionPlanUncheckedUpdateManyWithoutUserNestedInput
   workoutPlans?: Prisma.WorkoutPlanUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutFeedbackInput = {
+  id?: string
+  email?: string | null
+  username: string
+  fullName?: string | null
+  password?: string | null
+  role?: $Enums.UserRole
+  planningMode?: $Enums.PlanningMode
+  onboardingComplete?: boolean
+  weight?: number | null
+  height?: number | null
+  age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
+  activityLevel?: $Enums.ActivityLevel | null
+  goal?: $Enums.Goal | null
+  targetCalories?: number | null
+  targetProtein?: number | null
+  targetCarbs?: number | null
+  targetFat?: number | null
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  foodEntries?: Prisma.FoodEntryCreateNestedManyWithoutUserInput
+  waterEntries?: Prisma.WaterEntryCreateNestedManyWithoutUserInput
+  nutritionPlans?: Prisma.NutritionPlanCreateNestedManyWithoutUserInput
+  workoutPlans?: Prisma.WorkoutPlanCreateNestedManyWithoutUserInput
+  workoutLog?: Prisma.WorkoutLogEntryCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutFeedbackInput = {
+  id?: string
+  email?: string | null
+  username: string
+  fullName?: string | null
+  password?: string | null
+  role?: $Enums.UserRole
+  planningMode?: $Enums.PlanningMode
+  onboardingComplete?: boolean
+  weight?: number | null
+  height?: number | null
+  age?: number | null
+  biologicalSex?: $Enums.BiologicalSex | null
+  activityLevel?: $Enums.ActivityLevel | null
+  goal?: $Enums.Goal | null
+  targetCalories?: number | null
+  targetProtein?: number | null
+  targetCarbs?: number | null
+  targetFat?: number | null
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  foodEntries?: Prisma.FoodEntryUncheckedCreateNestedManyWithoutUserInput
+  waterEntries?: Prisma.WaterEntryUncheckedCreateNestedManyWithoutUserInput
+  nutritionPlans?: Prisma.NutritionPlanUncheckedCreateNestedManyWithoutUserInput
+  workoutPlans?: Prisma.WorkoutPlanUncheckedCreateNestedManyWithoutUserInput
+  workoutLog?: Prisma.WorkoutLogEntryUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutFeedbackInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutFeedbackInput, Prisma.UserUncheckedCreateWithoutFeedbackInput>
+}
+
+export type UserUpsertWithoutFeedbackInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutFeedbackInput, Prisma.UserUncheckedUpdateWithoutFeedbackInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutFeedbackInput, Prisma.UserUncheckedCreateWithoutFeedbackInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutFeedbackInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutFeedbackInput, Prisma.UserUncheckedUpdateWithoutFeedbackInput>
+}
+
+export type UserUpdateWithoutFeedbackInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
+  onboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
+  activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
+  goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
+  targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  targetProtein?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  targetCarbs?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  targetFat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  foodEntries?: Prisma.FoodEntryUpdateManyWithoutUserNestedInput
+  waterEntries?: Prisma.WaterEntryUpdateManyWithoutUserNestedInput
+  nutritionPlans?: Prisma.NutritionPlanUpdateManyWithoutUserNestedInput
+  workoutPlans?: Prisma.WorkoutPlanUpdateManyWithoutUserNestedInput
+  workoutLog?: Prisma.WorkoutLogEntryUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutFeedbackInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  fullName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  planningMode?: Prisma.EnumPlanningModeFieldUpdateOperationsInput | $Enums.PlanningMode
+  onboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  weight?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  height?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  age?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  biologicalSex?: Prisma.NullableEnumBiologicalSexFieldUpdateOperationsInput | $Enums.BiologicalSex | null
+  activityLevel?: Prisma.NullableEnumActivityLevelFieldUpdateOperationsInput | $Enums.ActivityLevel | null
+  goal?: Prisma.NullableEnumGoalFieldUpdateOperationsInput | $Enums.Goal | null
+  targetCalories?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  targetProtein?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  targetCarbs?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  targetFat?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  foodEntries?: Prisma.FoodEntryUncheckedUpdateManyWithoutUserNestedInput
+  waterEntries?: Prisma.WaterEntryUncheckedUpdateManyWithoutUserNestedInput
+  nutritionPlans?: Prisma.NutritionPlanUncheckedUpdateManyWithoutUserNestedInput
+  workoutPlans?: Prisma.WorkoutPlanUncheckedUpdateManyWithoutUserNestedInput
+  workoutLog?: Prisma.WorkoutLogEntryUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -1512,6 +1727,7 @@ export type UserCountOutputType = {
   nutritionPlans: number
   workoutPlans: number
   workoutLog: number
+  feedback: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1520,6 +1736,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   nutritionPlans?: boolean | UserCountOutputTypeCountNutritionPlansArgs
   workoutPlans?: boolean | UserCountOutputTypeCountWorkoutPlansArgs
   workoutLog?: boolean | UserCountOutputTypeCountWorkoutLogArgs
+  feedback?: boolean | UserCountOutputTypeCountFeedbackArgs
 }
 
 /**
@@ -1567,11 +1784,19 @@ export type UserCountOutputTypeCountWorkoutLogArgs<ExtArgs extends runtime.Types
   where?: Prisma.WorkoutLogEntryWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountFeedbackArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FeedbackWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   email?: boolean
   username?: boolean
+  fullName?: boolean
   password?: boolean
   role?: boolean
   planningMode?: boolean
@@ -1594,6 +1819,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   nutritionPlans?: boolean | Prisma.User$nutritionPlansArgs<ExtArgs>
   workoutPlans?: boolean | Prisma.User$workoutPlansArgs<ExtArgs>
   workoutLog?: boolean | Prisma.User$workoutLogArgs<ExtArgs>
+  feedback?: boolean | Prisma.User$feedbackArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1601,6 +1827,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   id?: boolean
   email?: boolean
   username?: boolean
+  fullName?: boolean
   password?: boolean
   role?: boolean
   planningMode?: boolean
@@ -1624,6 +1851,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   id?: boolean
   email?: boolean
   username?: boolean
+  fullName?: boolean
   password?: boolean
   role?: boolean
   planningMode?: boolean
@@ -1647,6 +1875,7 @@ export type UserSelectScalar = {
   id?: boolean
   email?: boolean
   username?: boolean
+  fullName?: boolean
   password?: boolean
   role?: boolean
   planningMode?: boolean
@@ -1666,13 +1895,14 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "username" | "password" | "role" | "planningMode" | "onboardingComplete" | "weight" | "height" | "age" | "biologicalSex" | "activityLevel" | "goal" | "targetCalories" | "targetProtein" | "targetCarbs" | "targetFat" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "username" | "fullName" | "password" | "role" | "planningMode" | "onboardingComplete" | "weight" | "height" | "age" | "biologicalSex" | "activityLevel" | "goal" | "targetCalories" | "targetProtein" | "targetCarbs" | "targetFat" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   foodEntries?: boolean | Prisma.User$foodEntriesArgs<ExtArgs>
   waterEntries?: boolean | Prisma.User$waterEntriesArgs<ExtArgs>
   nutritionPlans?: boolean | Prisma.User$nutritionPlansArgs<ExtArgs>
   workoutPlans?: boolean | Prisma.User$workoutPlansArgs<ExtArgs>
   workoutLog?: boolean | Prisma.User$workoutLogArgs<ExtArgs>
+  feedback?: boolean | Prisma.User$feedbackArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1686,11 +1916,13 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     nutritionPlans: Prisma.$NutritionPlanPayload<ExtArgs>[]
     workoutPlans: Prisma.$WorkoutPlanPayload<ExtArgs>[]
     workoutLog: Prisma.$WorkoutLogEntryPayload<ExtArgs>[]
+    feedback: Prisma.$FeedbackPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     email: string | null
     username: string
+    fullName: string | null
     password: string | null
     role: $Enums.UserRole
     planningMode: $Enums.PlanningMode
@@ -2107,6 +2339,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   nutritionPlans<T extends Prisma.User$nutritionPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$nutritionPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NutritionPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workoutPlans<T extends Prisma.User$workoutPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$workoutPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkoutPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workoutLog<T extends Prisma.User$workoutLogArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$workoutLogArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkoutLogEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  feedback<T extends Prisma.User$feedbackArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$feedbackArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeedbackPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2139,6 +2372,7 @@ export interface UserFieldRefs {
   readonly id: Prisma.FieldRef<"User", 'String'>
   readonly email: Prisma.FieldRef<"User", 'String'>
   readonly username: Prisma.FieldRef<"User", 'String'>
+  readonly fullName: Prisma.FieldRef<"User", 'String'>
   readonly password: Prisma.FieldRef<"User", 'String'>
   readonly role: Prisma.FieldRef<"User", 'UserRole'>
   readonly planningMode: Prisma.FieldRef<"User", 'PlanningMode'>
@@ -2666,6 +2900,30 @@ export type User$workoutLogArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.WorkoutLogEntryScalarFieldEnum | Prisma.WorkoutLogEntryScalarFieldEnum[]
+}
+
+/**
+ * User.feedback
+ */
+export type User$feedbackArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Feedback
+   */
+  select?: Prisma.FeedbackSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Feedback
+   */
+  omit?: Prisma.FeedbackOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FeedbackInclude<ExtArgs> | null
+  where?: Prisma.FeedbackWhereInput
+  orderBy?: Prisma.FeedbackOrderByWithRelationInput | Prisma.FeedbackOrderByWithRelationInput[]
+  cursor?: Prisma.FeedbackWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FeedbackScalarFieldEnum | Prisma.FeedbackScalarFieldEnum[]
 }
 
 /**
