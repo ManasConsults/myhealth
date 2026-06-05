@@ -121,13 +121,12 @@ export function WorkoutReports({ log }: Props) {
     [log]
   );
 
-  const effectiveExercise = selectedExercise || exerciseNames[0] || "";
-
+  // "" means all exercises
   const sessions = useMemo((): Session[] => {
-    if (!effectiveExercise) return [];
+    if (!selectedExercise) return [];
     const byDate = new Map<string, WorkoutLogEntry[]>();
     for (const e of periodLog) {
-      if (e.exerciseName !== effectiveExercise) continue;
+      if (e.exerciseName !== selectedExercise) continue;
       const arr = byDate.get(e.date) ?? [];
       arr.push(e);
       byDate.set(e.date, arr);
@@ -141,9 +140,35 @@ export function WorkoutReports({ log }: Props) {
         const volume = Math.round(allSets.reduce((s, set) => s + set.weight * set.reps, 0));
         return { date, maxWeight, totalReps, volume, totalSets: allSets.length };
       });
-  }, [periodLog, effectiveExercise]);
+  }, [periodLog, selectedExercise]);
 
   const maxSessWeight = Math.max(...sessions.map((s) => s.maxWeight), 1);
+
+  interface ExerciseSummary {
+    name: string;
+    sessionCount: number;
+    maxWeight: number;
+    totalSets: number;
+    totalReps: number;
+    volume: number;
+  }
+
+  const exerciseSummaries = useMemo((): ExerciseSummary[] => {
+    if (selectedExercise !== "") return [];
+    const map = new Map<string, { dates: Set<string>; maxWeight: number; totalSets: number; totalReps: number; volume: number }>();
+    for (const e of periodLog) {
+      const cur = map.get(e.exerciseName) ?? { dates: new Set(), maxWeight: 0, totalSets: 0, totalReps: 0, volume: 0 };
+      cur.dates.add(e.date);
+      cur.maxWeight = Math.max(cur.maxWeight, ...e.sets.map((s) => s.weight));
+      cur.totalSets += e.sets.length;
+      cur.totalReps += e.sets.reduce((s, set) => s + set.reps, 0);
+      cur.volume += Math.round(e.sets.reduce((s, set) => s + set.weight * set.reps, 0));
+      map.set(e.exerciseName, cur);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, s]) => ({ name, sessionCount: s.dates.size, maxWeight: s.maxWeight, totalSets: s.totalSets, totalReps: s.totalReps, volume: s.volume }));
+  }, [periodLog, selectedExercise]);
 
   const displayDate = (d: string) =>
     toLocal(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -263,10 +288,11 @@ export function WorkoutReports({ log }: Props) {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base">Exercise Progression</CardTitle>
             <select
-              value={effectiveExercise}
+              value={selectedExercise}
               onChange={(e) => setSelectedExercise(e.target.value)}
               className="text-sm border border-input rounded-lg px-3 bg-background min-h-11 sm:h-9 sm:min-h-0"
             >
+              <option value="">All exercises</option>
               {exerciseNames.map((name) => (
                 <option key={name} value={name}>
                   {name}
@@ -276,8 +302,44 @@ export function WorkoutReports({ log }: Props) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {sessions.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">No data for this exercise</p>
+          {selectedExercise === "" ? (
+            /* All exercises summary */
+            exerciseSummaries.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">No workouts in this period</p>
+            ) : (
+              <div className="overflow-x-auto -mx-6 px-6">
+                <table className="w-full text-sm min-w-96">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 pr-3 text-xs font-medium text-muted-foreground">Exercise</th>
+                      <th className="text-right py-2 pr-3 text-xs font-medium text-muted-foreground">Sessions</th>
+                      <th className="text-right py-2 pr-3 text-xs font-medium text-muted-foreground">Max Weight</th>
+                      <th className="text-right py-2 pr-3 text-xs font-medium text-muted-foreground">Sets</th>
+                      <th className="text-right py-2 pr-3 text-xs font-medium text-muted-foreground">Reps</th>
+                      <th className="text-right py-2 text-xs font-medium text-muted-foreground">Volume</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exerciseSummaries.map((ex) => (
+                      <tr
+                        key={ex.name}
+                        className="border-b border-border/40 last:border-0 hover:bg-muted/40 cursor-pointer transition-colors"
+                        onClick={() => setSelectedExercise(ex.name)}
+                      >
+                        <td className="py-2.5 pr-3 font-medium">{ex.name}</td>
+                        <td className="py-2.5 pr-3 text-right tabular-nums text-muted-foreground">{ex.sessionCount}</td>
+                        <td className="py-2.5 pr-3 text-right tabular-nums font-medium">{ex.maxWeight} kg</td>
+                        <td className="py-2.5 pr-3 text-right tabular-nums">{ex.totalSets}</td>
+                        <td className="py-2.5 pr-3 text-right tabular-nums">{ex.totalReps}</td>
+                        <td className="py-2.5 text-right tabular-nums text-muted-foreground">{ex.volume} kg</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          ) : sessions.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">No data for this exercise in this period</p>
           ) : (
             <>
               {/* Weight progression bar chart */}

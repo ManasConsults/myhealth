@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { clearWorkoutLogForDate, logWorkout, logWorkoutsBatch, removeWorkoutLogEntry, updateWorkoutLogEntry } from "@/lib/actions";
 import { ExerciseLibrary, WorkoutLogEntry, WorkoutPlan, WorkoutSet } from "@/lib/types";
-import { BookOpen, CalendarDays, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
+import { BookOpen, CalendarDays, ChevronLeft, ChevronRight, CopyPlus, Pencil, Plus, Trash2, X } from "lucide-react";
 import { ExerciseType, EXERCISE_TYPE_LABELS, EXERCISE_TYPE_OPTIONS } from "@/lib/types";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -82,6 +82,11 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
 
   // Clear day confirmation
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+
+  // Repeat day sheet
+  const [repeatDayOpen, setRepeatDayOpen] = useState(false);
+  const [repeatSourceDate, setRepeatSourceDate] = useState("");
+  const [repeatSetsMap, setRepeatSetsMap] = useState<SetsMap>({});
 
   // Plan log sheet
   const [planOpen, setPlanOpen] = useState(false);
@@ -167,6 +172,13 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
   function openEdit(entry: WorkoutLogEntry) {
     setEditEntry(entry);
     setEditSets(entry.sets.map((s) => ({ ...s })));
+  }
+
+  function handleRepeatExercise(name: string, prevSets: WorkoutSet[]) {
+    setExerciseName(name);
+    setExerciseType(null);
+    setSets(prevSets.map((s, i) => ({ ...s, setNumber: i + 1 })));
+    setOpen(true);
   }
 
   function handleEditSave(e: React.BaseSyntheticEvent) {
@@ -277,6 +289,73 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
     });
   }
 
+  // ── Repeat day ────────────────────────────────────────────────
+
+  // Past dates that have entries, excluding selectedDate, most recent first
+  const pastDatesWithEntries = [...new Set(log.map((e) => e.date))]
+    .filter((d) => d !== selectedDate)
+    .sort((a, b) => b.localeCompare(a))
+    .slice(0, 10);
+
+  function buildRepeatSetsMap(sourceDate: string): SetsMap {
+    const map: SetsMap = {};
+    for (const entry of log.filter((e) => e.date === sourceDate)) {
+      const key = entry.exerciseName;
+      map[key] = (map[key] ?? []).concat(entry.sets);
+    }
+    // Re-number sets after merge
+    for (const key of Object.keys(map)) {
+      map[key] = map[key].map((s, i) => ({ ...s, setNumber: i + 1 }));
+    }
+    return map;
+  }
+
+  function openRepeatDaySheet() {
+    const defaultDate = pastDatesWithEntries[0] ?? "";
+    setRepeatSourceDate(defaultDate);
+    setRepeatSetsMap(defaultDate ? buildRepeatSetsMap(defaultDate) : {});
+    setRepeatDayOpen(true);
+  }
+
+  function handleRepeatSourceDateChange(date: string) {
+    setRepeatSourceDate(date);
+    setRepeatSetsMap(buildRepeatSetsMap(date));
+  }
+
+  function addRepeatSet(exName: string) {
+    setRepeatSetsMap((p) => {
+      const cur = p[exName] ?? [];
+      return { ...p, [exName]: [...cur, { setNumber: cur.length + 1, reps: 10, weight: 60 }] };
+    });
+  }
+
+  function removeRepeatSet(exName: string, idx: number) {
+    setRepeatSetsMap((p) => ({
+      ...p,
+      [exName]: (p[exName] ?? []).filter((_, i) => i !== idx).map((s, i) => ({ ...s, setNumber: i + 1 })),
+    }));
+  }
+
+  function updateRepeatSet(exName: string, idx: number, field: keyof WorkoutSet, val: number) {
+    setRepeatSetsMap((p) => ({
+      ...p,
+      [exName]: (p[exName] ?? []).map((s, i) => (i === idx ? { ...s, [field]: val } : s)),
+    }));
+  }
+
+  function handleLogRepeatDay(e: React.BaseSyntheticEvent) {
+    e.preventDefault();
+    const entries = Object.entries(repeatSetsMap)
+      .filter(([, sets]) => sets.length > 0)
+      .map(([exerciseName, sets]) => ({ exerciseName, sets, date: selectedDate }));
+    if (!entries.length) return;
+    startTransition(async () => {
+      await logWorkoutsBatch(entries);
+      setRepeatDayOpen(false);
+      onUpdate();
+    });
+  }
+
   // ── Calendar ───────────────────────────────────────────────────
 
   const { year, month } = displayMonth;
@@ -378,6 +457,11 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
                 <X className="w-3.5 h-3.5" />Clear day
               </Button>
             )}
+            {pastDatesWithEntries.length > 0 && (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={openRepeatDaySheet}>
+                <CopyPlus className="w-3.5 h-3.5" />Repeat Day
+              </Button>
+            )}
             {plans.length > 0 && (
               <Button variant="outline" size="sm" className="gap-1.5" onClick={openPlanSheet}>
                 <BookOpen className="w-3.5 h-3.5" />Log from Plan
@@ -426,6 +510,29 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
                     </div>
                   )}
                 </div>
+                {(() => {
+                  const lowerName = exerciseName.toLowerCase();
+                  const prev = exerciseName
+                    ? (lastSessionByExercise[exerciseName] ??
+                        Object.entries(lastSessionByExercise).find(([k]) => k.toLowerCase() === lowerName)?.[1] ??
+                        null)
+                    : null;
+                  if (!prev) return null;
+                  return (
+                    <div className="flex items-center justify-between rounded-lg bg-muted/60 px-3 py-2 gap-2">
+                      <span className="text-xs text-muted-foreground truncate">
+                        Last · {fmtDate(prev.date)} · {prev.sets.length} sets · {prev.sets.map((s) => `${s.weight} kg`).join(" / ")}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSets(prev.sets.map((s, i) => ({ ...s, setNumber: i + 1 })))}
+                        className="text-xs font-medium text-primary hover:text-primary/80 transition-colors shrink-0"
+                      >
+                        Use
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
               <div className="space-y-1.5">
                 <Label>Type <span className="text-muted-foreground font-normal">(optional)</span></Label>
@@ -608,6 +715,72 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
           </SheetContent>
         </Sheet>
 
+        {/* ── Repeat day sheet ───────────────────────────────── */}
+        <Sheet open={repeatDayOpen} onOpenChange={setRepeatDayOpen}>
+          <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0">
+            <SheetHeader className="px-5 pt-5 pb-4 border-b shrink-0">
+              <SheetTitle>Repeat Day</SheetTitle>
+            </SheetHeader>
+
+            <form onSubmit={handleLogRepeatDay} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+
+                {/* Date picker */}
+                <div className="space-y-2">
+                  <Label>Copy from</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {pastDatesWithEntries.map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => handleRepeatSourceDateChange(d)}
+                        className={[
+                          "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                          d === repeatSourceDate
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:text-foreground",
+                        ].join(" ")}
+                      >
+                        {fmtDate(d)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Exercises from that day */}
+                {repeatSourceDate && Object.keys(repeatSetsMap).length > 0 ? (
+                  <div className="space-y-3">
+                    {Object.entries(repeatSetsMap).map(([exName, exSets]) => (
+                      <ExerciseSetEditor
+                        key={exName}
+                        exerciseName={exName}
+                        sets={exSets}
+                        onAdd={() => addRepeatSet(exName)}
+                        onRemove={(i) => removeRepeatSet(exName, i)}
+                        onUpdate={(i, f, v) => updateRepeatSet(exName, i, f, v)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Pick a day above to load its exercises.
+                  </p>
+                )}
+              </div>
+
+              <div className="shrink-0 px-5 py-4 border-t bg-popover">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isPending || !repeatSourceDate || Object.keys(repeatSetsMap).length === 0}
+                >
+                  {isPending ? "Logging…" : `Log for ${selectedLabel}`}
+                </Button>
+              </div>
+            </form>
+          </SheetContent>
+        </Sheet>
+
         {/* ── Log list ───────────────────────────────────────── */}
         {Object.keys(grouped).length === 0 ? (
           <div className="rounded-xl border border-dashed bg-muted/20 py-10 text-center space-y-1">
@@ -688,6 +861,15 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
                         <span className="text-xs font-medium">{prev.sets.length} sets</span>
                         <span className="text-xs text-muted-foreground">·</span>
                         <span className="text-xs text-muted-foreground">{prev.sets.map((s) => `${s.weight} kg`).join(" / ")}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto h-7 gap-1 text-xs px-2"
+                          onClick={() => handleRepeatExercise(name, prev.sets)}
+                          disabled={isPending}
+                        >
+                          <CopyPlus className="w-3 h-3" />Repeat
+                        </Button>
                       </div>
                     );
                   })()}
