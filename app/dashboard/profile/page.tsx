@@ -104,13 +104,13 @@ export default function ProfilePage() {
                         if (e.key === "Escape") cancelEditingName();
                       }}
                       placeholder="Your full name"
-                      className="h-8 text-sm"
+                      className="h-11 md:h-8 text-base md:text-sm"
                       autoFocus
                     />
-                    <Button size="icon" className="h-8 w-8 shrink-0" onClick={handleSaveName} disabled={isPending} aria-label="Save">
+                    <Button size="icon" className="size-11 md:size-8 shrink-0" onClick={handleSaveName} disabled={isPending} aria-label="Save">
                       <Check className="w-3.5 h-3.5" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={cancelEditingName} aria-label="Cancel">
+                    <Button size="icon" variant="ghost" className="size-11 md:size-8 shrink-0" onClick={cancelEditingName} aria-label="Cancel">
                       <X className="w-3.5 h-3.5" />
                     </Button>
                   </div>
@@ -119,7 +119,7 @@ export default function ProfilePage() {
                     <p className="text-sm font-medium truncate">
                       {user.fullName ?? <span className="text-muted-foreground italic">Not set</span>}
                     </p>
-                    <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground" onClick={startEditingName} aria-label="Edit full name">
+                    <Button size="icon" variant="ghost" className="size-11 md:size-6 shrink-0 text-muted-foreground hover:text-foreground" onClick={startEditingName} aria-label="Edit full name">
                       <Pencil className="w-3 h-3" />
                     </Button>
                   </div>

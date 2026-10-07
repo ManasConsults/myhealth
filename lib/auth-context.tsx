@@ -3,12 +3,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { UserProfile } from "./types";
-import { loginUser, fetchUser } from "./actions";
+import { fetchUser } from "./actions";
 
 interface AuthContextValue {
   user: UserProfile | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<UserProfile | null>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -23,24 +23,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (status === "loading") return;
     if (status === "authenticated") {
-      fetchUser().then((profile) => setUser(profile ?? null));
+      fetchUser().then((profile) => {
+        // Session outlived the account's approval (rejected/deleted) — end it rather than render an empty shell
+        if (profile) setUser(profile);
+        else void signOut({ callbackUrl: "/" });
+      });
     } else if (status === "unauthenticated") {
       setUser(null); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [session, status]);
 
-  async function login(email: string, password: string): Promise<boolean> {
-    const profile = await loginUser(email, password);
-    if (!profile) return false;
+  async function login(email: string, password: string): Promise<UserProfile | null> {
+    const res = await signIn("credentials", { email, password, redirect: false });
+    if (!res || res.error) return null;
 
-    try {
-      await signIn("credentials", { email, password, redirect: false });
-    } catch {
-      // credentials already verified above — transient signIn error, proceed
-    }
-
+    const profile = (await fetchUser()) ?? null;
     setUser(profile);
-    return true;
+    return profile;
   }
 
   function logout(): void {

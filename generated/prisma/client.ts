@@ -77,6 +77,11 @@ export type ExerciseLibrary = Prisma.ExerciseLibraryModel
  */
 export type WorkoutLogEntry = Prisma.WorkoutLogEntryModel
 /**
+ * Model WorkoutSession
+ * 
+ */
+export type WorkoutSession = Prisma.WorkoutSessionModel
+/**
  * Model GlobalSettings
  * 
  */

@@ -48,7 +48,7 @@ export default function NutritionPage() {
       </div>
 
       <Tabs defaultValue="log">
-        <TabsList className="w-full sm:w-auto">
+        <TabsList className="w-full sm:w-fit">
           <TabsTrigger value="log" className="flex-1 sm:flex-none">Food Log</TabsTrigger>
           <TabsTrigger value="plans" className="flex-1 sm:flex-none">Plans</TabsTrigger>
           <TabsTrigger value="reports" className="flex-1 sm:flex-none">Reports</TabsTrigger>

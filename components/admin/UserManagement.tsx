@@ -14,7 +14,7 @@ interface Props {
   onUpdate: () => void;
 }
 
-const SELECT_CLS = "h-8 rounded-md border border-input bg-transparent px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed";
+const SELECT_CLS = "h-11 md:h-8 rounded-md border border-input bg-transparent px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed";
 
 export function UserManagement({ users, currentUserId, onUpdate }: Props) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -58,7 +58,7 @@ export function UserManagement({ users, currentUserId, onUpdate }: Props) {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-8 gap-1.5 text-xs"
+                          className="h-11 md:h-8 gap-1.5 text-xs"
                           disabled={loadingId === u.id}
                           onClick={() => run(u.id, () => approveUser(u.id))}
                         >
@@ -70,7 +70,7 @@ export function UserManagement({ users, currentUserId, onUpdate }: Props) {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-8 gap-1.5 text-xs"
+                          className="h-11 md:h-8 gap-1.5 text-xs"
                           disabled={loadingId === u.id}
                           onClick={() => run(u.id, () => rejectUser(u.id))}
                         >

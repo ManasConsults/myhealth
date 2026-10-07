@@ -3,8 +3,9 @@ import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Facebook from "next-auth/providers/facebook";
 import Apple from "next-auth/providers/apple";
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
+import { hashPassword, verifyPassword } from "@/lib/password";
 
 declare module "next-auth" {
   interface Session {
@@ -43,10 +44,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
 
-        const hash = createHash("sha256").update(password).digest("hex");
         const user = await prisma.user.findFirst({ where: { email } });
-        if (!user || user.password !== hash) return null;
+        if (!user?.password) return null;
+        const { ok, needsRehash } = await verifyPassword(password, user.password);
+        if (!ok) return null;
         if (user.status !== "approved") return null;
+        if (needsRehash) {
+          await prisma.user.update({ where: { id: user.id }, data: { password: await hashPassword(password) } });
+        }
 
         return { id: user.id, name: user.username, role: user.role } as { id: string; name: string; role: string };
       },

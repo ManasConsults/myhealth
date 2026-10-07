@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dumbbell, Calendar, TrendingUp, Layers } from "lucide-react";
-import type { WorkoutLogEntry } from "@/lib/types";
+import { Dumbbell, Calendar, TrendingUp, Layers, Timer } from "lucide-react";
+import type { WorkoutLogEntry, WorkoutSession } from "@/lib/types";
+import { formatDuration, toLocalISODate } from "@/lib/utils";
 
 type Period = "week" | "month" | "year";
 
@@ -22,10 +23,7 @@ interface Session {
 
 interface Props {
   log: WorkoutLogEntry[];
-}
-
-function fmtDate(d: Date): string {
-  return d.toISOString().split("T")[0];
+  gymSessions: WorkoutSession[];
 }
 
 function toLocal(s: string): Date {
@@ -36,18 +34,61 @@ function entryVol(e: WorkoutLogEntry): number {
   return e.sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
 }
 
-export function WorkoutReports({ log }: Props) {
+// Week: one bar per day · Month: four weekly bars · Year: one bar per calendar month
+function bucketBars(period: Period, byDate: Map<string, number>, today: string): Bar[] {
+  if (period === "week") {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return {
+        label: d.toLocaleDateString("en-US", { weekday: "short" }),
+        value: Math.round(byDate.get(toLocalISODate(d)) ?? 0),
+      };
+    });
+  }
+
+  if (period === "month") {
+    const weeks: Bar[] = [
+      { label: "Wk 4", value: 0 },
+      { label: "Wk 3", value: 0 },
+      { label: "Wk 2", value: 0 },
+      { label: "Wk 1", value: 0 },
+    ];
+    const todayMs = toLocal(today).getTime();
+    for (const [date, value] of byDate) {
+      const daysAgo = Math.floor((todayMs - toLocal(date).getTime()) / 86400000);
+      const wi = Math.min(3, Math.floor(daysAgo / 7));
+      weeks[3 - wi].value += value;
+    }
+    return weeks.map((w) => ({ ...w, value: Math.round(w.value) }));
+  }
+
+  // Year: aggregate by calendar month
+  const byMonth = new Map<string, number>();
+  for (const [date, value] of byDate) {
+    const key = date.slice(0, 7);
+    byMonth.set(key, (byMonth.get(key) ?? 0) + value);
+  }
+  return Array.from(byMonth.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, vol]) => ({
+      label: toLocal(key + "-01").toLocaleDateString("en-US", { month: "short" }),
+      value: Math.round(vol),
+    }));
+}
+
+export function WorkoutReports({ log, gymSessions }: Props) {
   const [period, setPeriod] = useState<Period>("week");
   const [selectedExercise, setSelectedExercise] = useState("");
 
-  const today = useMemo(() => fmtDate(new Date()), []);
+  const today = useMemo(() => toLocalISODate(new Date()), []);
 
   const startDate = useMemo(() => {
     const d = new Date();
     if (period === "week") d.setDate(d.getDate() - 6);
     else if (period === "month") d.setDate(d.getDate() - 29);
     else d.setDate(d.getDate() - 364);
-    return fmtDate(d);
+    return toLocalISODate(d);
   }, [period]);
 
   const periodLog = useMemo(
@@ -71,47 +112,22 @@ export function WorkoutReports({ log }: Props) {
     return map;
   }, [periodLog]);
 
-  const volumeBars = useMemo((): Bar[] => {
-    if (period === "week") {
-      return Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        return {
-          label: d.toLocaleDateString("en-US", { weekday: "short" }),
-          value: Math.round(volByDate.get(fmtDate(d)) ?? 0),
-        };
-      });
-    }
+  const volumeBars = useMemo(() => bucketBars(period, volByDate, today), [period, volByDate, today]);
 
-    if (period === "month") {
-      const weeks: Bar[] = [
-        { label: "Wk 4", value: 0 },
-        { label: "Wk 3", value: 0 },
-        { label: "Wk 2", value: 0 },
-        { label: "Wk 1", value: 0 },
-      ];
-      const todayMs = toLocal(today).getTime();
-      for (const [date, vol] of volByDate) {
-        const daysAgo = Math.floor((todayMs - toLocal(date).getTime()) / 86400000);
-        const wi = Math.min(3, Math.floor(daysAgo / 7));
-        weeks[3 - wi].value += vol;
-      }
-      return weeks.map((w) => ({ ...w, value: Math.round(w.value) }));
+  // Finished sessions only — one still in progress has no length yet
+  const gymMinutesByDate = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const s of gymSessions) {
+      if (!s.endedAt || s.date < startDate || s.date > today) continue;
+      map.set(s.date, (Date.parse(s.endedAt) - Date.parse(s.startedAt)) / 60000);
     }
+    return map;
+  }, [gymSessions, startDate, today]);
 
-    // Year: aggregate by calendar month
-    const byMonth = new Map<string, number>();
-    for (const [date, vol] of volByDate) {
-      const key = date.slice(0, 7);
-      byMonth.set(key, (byMonth.get(key) ?? 0) + vol);
-    }
-    return Array.from(byMonth.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, vol]) => ({
-        label: toLocal(key + "-01").toLocaleDateString("en-US", { month: "short" }),
-        value: Math.round(vol),
-      }));
-  }, [period, volByDate, today]);
+  const gymBars = useMemo(() => bucketBars(period, gymMinutesByDate, today), [period, gymMinutesByDate, today]);
+  const maxGymBar = Math.max(...gymBars.map((b) => b.value), 1);
+  const gymTotalMin = [...gymMinutesByDate.values()].reduce((a, b) => a + b, 0);
+  const gymAvgMin = gymMinutesByDate.size ? gymTotalMin / gymMinutesByDate.size : 0;
 
   const maxVolBar = Math.max(...volumeBars.map((b) => b.value), 1);
   const periodDays = period === "week" ? 7 : period === "month" ? 30 : 365;
@@ -148,7 +164,7 @@ export function WorkoutReports({ log }: Props) {
   const displayDate = (d: string) =>
     toLocal(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  if (log.length === 0) {
+  if (log.length === 0 && gymSessions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
         <Dumbbell className="w-10 h-10 mb-3 opacity-30" />
@@ -257,22 +273,66 @@ export function WorkoutReports({ log }: Props) {
         </CardContent>
       </Card>
 
+      {/* Gym time chart */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Timer className="w-4 h-4 text-chart-5" />Gym Time
+            </CardTitle>
+            {gymMinutesByDate.size > 0 && (
+              <span className="text-xs text-muted-foreground tabular-nums" data-testid="gym-avg">
+                avg {formatDuration(gymAvgMin * 60000)} · {gymMinutesByDate.size} session{gymMinutesByDate.size === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {gymMinutesByDate.size === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">No timed workouts in this period</p>
+          ) : (
+            <div>
+              <div className="flex items-end h-28 gap-1 mb-1">
+                {gymBars.map((bar, i) => (
+                  <div key={i} className="flex flex-col justify-end flex-1 h-full">
+                    <div
+                      title={formatDuration(bar.value * 60000)}
+                      className="w-full rounded-t-sm bg-chart-5 transition-all duration-500"
+                      style={{ height: `${Math.max(2, (bar.value / maxGymBar) * 100)}%` }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-1">
+                {gymBars.map((bar, i) => (
+                  <div key={i} className="flex-1 text-center">
+                    <span className="text-[10px] text-muted-foreground">{bar.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Exercise progression */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base">Exercise Progression</CardTitle>
-            <select
-              value={effectiveExercise}
-              onChange={(e) => setSelectedExercise(e.target.value)}
-              className="text-sm border border-input rounded-lg px-3 bg-background min-h-11 sm:h-9 sm:min-h-0"
-            >
-              {exerciseNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
+            {exerciseNames.length > 0 && (
+              <select
+                value={effectiveExercise}
+                onChange={(e) => setSelectedExercise(e.target.value)}
+                className="text-base sm:text-sm border border-input rounded-lg px-3 bg-background min-h-11 sm:h-9 sm:min-h-0"
+              >
+                {exerciseNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

@@ -103,6 +103,7 @@ model User {
   nutritionPlans     NutritionPlan[]
   workoutPlans       WorkoutPlan[]
   workoutLog         WorkoutLogEntry[]
+  workoutSessions    WorkoutSession[]
   feedback           Feedback[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
@@ -180,9 +181,24 @@ model WorkoutLogEntry {
   exerciseLibraryId String?
   exerciseLibrary   ExerciseLibrary? @relation(fields: [exerciseLibraryId], references: [id], onDelete: SetNull)
   sets              Json             // WorkoutSet[]
+  completed         Boolean          @default(false)
+  startedAt         DateTime?
+  endedAt           DateTime?
   createdAt         DateTime         @default(now())
 
   @@index([userId, date])
+}
+
+model WorkoutSession {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String    // YYYY-MM-DD
+  startedAt DateTime
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, date])
 }
 
 // Singleton row — always id = "global"

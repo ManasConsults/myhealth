@@ -132,7 +132,7 @@ export function FeedbackManager({ feedback, onUpdate }: Props) {
                   value={row.status}
                   onValueChange={(v) => setStatus(fb.id, v as FeedbackStatus)}
                 >
-                  <SelectTrigger className="h-7 text-xs w-32">
+                  <SelectTrigger className="h-11 md:h-7 text-base md:text-xs w-32">
                     <SelectValue>
                       <span
                         className={cn(
@@ -157,7 +157,7 @@ export function FeedbackManager({ feedback, onUpdate }: Props) {
               <TableCell className="max-w-xs">
                 <Input
                   placeholder="Admin note (optional)"
-                  className="h-7 text-xs"
+                  className="h-11 md:h-7 text-base md:text-xs"
                   value={row.note}
                   onChange={(e) => setNote(fb.id, e.target.value)}
                 />
@@ -169,7 +169,7 @@ export function FeedbackManager({ feedback, onUpdate }: Props) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-primary"
+                      className="size-11 md:size-8 text-primary"
                       onClick={() => handleSave(fb.id)}
                       disabled={isPending}
                       aria-label="Save"
@@ -180,7 +180,7 @@ export function FeedbackManager({ feedback, onUpdate }: Props) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    className="size-11 md:size-8 text-muted-foreground hover:text-destructive"
                     onClick={() => handleDelete(fb.id)}
                     disabled={isPending}
                     aria-label="Delete feedback"

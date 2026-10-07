@@ -15,7 +15,7 @@
 2. **`lib/db.ts`** must not have `"use client"` — imported by Server Actions.
 3. **`auth-context.tsx`, `ColorThemeProvider.tsx`, `ThemeProvider.tsx`** must have `"use client"`.
 4. **New model sequence**: define type in `lib/types.ts` → add Prisma model in `prisma/schema.prisma` → `npm run db:push && npm run db:generate` → add Server Actions to `lib/actions.ts` → wire UI last.
-5. **Passwords** are SHA-256 hashed via Node.js `crypto` — no bcrypt dependency. Hashing: `createHash("sha256").update(password).digest("hex")`.
+5. **Passwords** use salted scrypt via `lib/password.ts` (`hashPassword` / `verifyPassword`) — Node.js `crypto`, no bcrypt dependency. Legacy unsalted SHA-256 hashes still verify and are re-hashed on the next successful login.
 6. **Auth** is handled by Auth.js v5 (`next-auth@^5.0.0-beta.31`). Config lives in `auth.ts` (root). Route handler at `app/api/auth/[...nextauth]/route.ts`. Route protection in `proxy.ts` (Next.js v16 — NOT `middleware.ts`).
 7. **`useAuth()`** in `lib/auth-context.tsx` wraps Auth.js `useSession()` / `signIn()` / `signOut()`. The hook interface is unchanged — no component rewrites needed when updating auth internals.
 8. **User status flow**: new users default to `status: "pending"`. Only `status: "approved"` users can log in. Admins approve/reject via `approveUser(id)` / `rejectUser(id)` Server Actions.

@@ -1,10 +1,10 @@
 "use server";
 
-import { createHash } from "crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "./db";
 import { auth } from "@/auth";
 import { calcMacros } from "./calculations";
+import { hashPassword } from "./password";
 import type {
   ActivityLevel,
   BiologicalSex,
@@ -32,6 +32,7 @@ import type {
   WorkoutDay,
   WorkoutLogEntry,
   WorkoutPlan,
+  WorkoutSession,
   WorkoutSet,
 } from "./types";
 import type {
@@ -42,6 +43,7 @@ import type {
   NutritionPlan as DbNutritionPlan,
   WorkoutPlan as DbWorkoutPlan,
   WorkoutLogEntry as DbWorkoutLogEntry,
+  WorkoutSession as DbWorkoutSession,
   ExerciseLibrary as DbExerciseLibrary,
   FoodCache as DbFoodCache,
   Feedback as DbFeedback,
@@ -148,6 +150,19 @@ function toWorkoutLogEntry(e: DbWorkoutLogEntry): WorkoutLogEntry {
     exerciseId: e.exerciseId,
     exerciseName: e.exerciseName,
     sets: e.sets as unknown as WorkoutSet[],
+    completed: e.completed,
+    startedAt: e.startedAt?.toISOString(),
+    endedAt: e.endedAt?.toISOString(),
+  };
+}
+
+function toWorkoutSession(s: DbWorkoutSession): WorkoutSession {
+  return {
+    id: s.id,
+    userId: s.userId,
+    date: s.date,
+    startedAt: s.startedAt.toISOString(),
+    endedAt: s.endedAt?.toISOString(),
   };
 }
 
@@ -155,28 +170,23 @@ function toWorkoutLogEntry(e: DbWorkoutLogEntry): WorkoutLogEntry {
 // Authorization helpers
 // ---------------------------------------------------------------------------
 
-async function requireAuth(): Promise<string> {
+// Checks status/role against the DB, not the JWT, so rejecting or demoting a user takes effect immediately
+// instead of when their session token expires.
+async function currentUser(): Promise<{ id: string; role: string }> {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) throw new Error("Unauthorized");
-  return userId;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, role: true, status: true } });
+  if (!user || user.status !== "approved") throw new Error("Unauthorized");
+  return user;
+}
+
+async function requireAuth(): Promise<string> {
+  return (await currentUser()).id;
 }
 
 async function requireAdmin(): Promise<void> {
-  const session = await auth();
-  if (session?.user?.role !== "admin") throw new Error("Forbidden");
-}
-
-// ---------------------------------------------------------------------------
-// Auth
-// ---------------------------------------------------------------------------
-
-export async function loginUser(email: string, password: string): Promise<UserProfile | null> {
-  const passwordHash = createHash("sha256").update(password).digest("hex");
-  const user = await prisma.user.findFirst({ where: { email } });
-  if (!user || user.password !== passwordHash) return null;
-  if (user.status !== "approved") return null;
-  return toUserProfile(user);
+  if ((await currentUser()).role !== "admin") throw new Error("Forbidden");
 }
 
 // ---------------------------------------------------------------------------
@@ -417,6 +427,45 @@ export async function updateWorkoutLogEntry(id: string, sets: WorkoutSet[]): Pro
   return toWorkoutLogEntry(updated);
 }
 
+// Marking done also stops the exercise clock; un-marking resumes it.
+export async function setWorkoutExerciseCompleted(date: string, exerciseName: string, completed: boolean): Promise<void> {
+  const userId = await requireAuth();
+  await prisma.workoutLogEntry.updateMany({
+    where: { userId, date, exerciseName },
+    data: { completed, endedAt: completed ? new Date() : null },
+  });
+}
+
+export async function startWorkoutExercise(date: string, exerciseName: string): Promise<void> {
+  const userId = await requireAuth();
+  await prisma.workoutLogEntry.updateMany({
+    where: { userId, date, exerciseName },
+    data: { startedAt: new Date(), endedAt: null },
+  });
+}
+
+function parseTimeRange(startedAt: string, endedAt: string | null): { start: Date; end: Date | null } {
+  const start = new Date(startedAt);
+  const end = endedAt ? new Date(endedAt) : null;
+  if (Number.isNaN(start.getTime()) || (end && Number.isNaN(end.getTime()))) throw new Error("Invalid time");
+  if (end && end < start) throw new Error("End time must be after start time");
+  return { start, end };
+}
+
+export async function updateWorkoutExerciseTimes(
+  date: string,
+  exerciseName: string,
+  startedAt: string,
+  endedAt: string | null,
+): Promise<void> {
+  const userId = await requireAuth();
+  const { start, end } = parseTimeRange(startedAt, endedAt);
+  await prisma.workoutLogEntry.updateMany({
+    where: { userId, date, exerciseName },
+    data: { startedAt: start, endedAt: end },
+  });
+}
+
 export async function logWorkoutsBatch(
   entries: Array<{ exerciseName: string; sets: WorkoutSet[]; date: string }>
 ): Promise<void> {
@@ -444,6 +493,58 @@ export async function logWorkoutsBatch(
 }
 
 // ---------------------------------------------------------------------------
+// Workout sessions (time at the gym)
+// ---------------------------------------------------------------------------
+
+// Starting again after ending resumes the same session rather than resetting its start time.
+export async function startWorkoutSession(date: string): Promise<WorkoutSession> {
+  const userId = await requireAuth();
+  const session = await prisma.workoutSession.upsert({
+    where: { userId_date: { userId, date } },
+    update: { endedAt: null },
+    create: { userId, date, startedAt: new Date() },
+  });
+  return toWorkoutSession(session);
+}
+
+export async function endWorkoutSession(date: string): Promise<WorkoutSession | null> {
+  const userId = await requireAuth();
+  const { count } = await prisma.workoutSession.updateMany({ where: { userId, date }, data: { endedAt: new Date() } });
+  if (!count) return null;
+  const session = await prisma.workoutSession.findUnique({ where: { userId_date: { userId, date } } });
+  return session ? toWorkoutSession(session) : null;
+}
+
+export async function updateWorkoutSessionTimes(
+  date: string,
+  startedAt: string,
+  endedAt: string | null,
+): Promise<WorkoutSession> {
+  const userId = await requireAuth();
+  const { start, end } = parseTimeRange(startedAt, endedAt);
+  const session = await prisma.workoutSession.upsert({
+    where: { userId_date: { userId, date } },
+    update: { startedAt: start, endedAt: end },
+    create: { userId, date, startedAt: start, endedAt: end },
+  });
+  return toWorkoutSession(session);
+}
+
+export async function removeWorkoutSession(date: string): Promise<void> {
+  const userId = await requireAuth();
+  await prisma.workoutSession.deleteMany({ where: { userId, date } });
+}
+
+export async function fetchWorkoutSessions(date?: string): Promise<WorkoutSession[]> {
+  const userId = await requireAuth();
+  const sessions = await prisma.workoutSession.findMany({
+    where: { userId, ...(date ? { date } : {}) },
+    orderBy: { date: "asc" },
+  });
+  return sessions.map(toWorkoutSession);
+}
+
+// ---------------------------------------------------------------------------
 // Admin
 // ---------------------------------------------------------------------------
 
@@ -462,9 +563,11 @@ export async function updateGlobalSettings(patch: Partial<GlobalSettings>): Prom
 // ---------------------------------------------------------------------------
 
 export async function fetchUser(): Promise<UserProfile | undefined> {
-  const userId = await requireAuth();
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) return undefined;
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  return user ? toUserProfile(user) : undefined;
+  return user?.status === "approved" ? toUserProfile(user) : undefined;
 }
 
 export async function fetchFoodLog(date?: string): Promise<FoodEntry[]> {
@@ -511,6 +614,7 @@ export async function fetchExerciseLibrary(): Promise<ExerciseLibrary[]> {
 }
 
 export async function upsertExerciseInLibrary(name: string, type?: ExerciseType): Promise<ExerciseLibrary> {
+  await requireAuth();
   const ex = await prisma.exerciseLibrary.upsert({
     where: { name },
     update: type ? { type } : {},
@@ -585,7 +689,7 @@ export async function registerUser(
   const usernameConflict = await prisma.user.findUnique({ where: { username } });
   if (usernameConflict) return { success: false, error: "This display name is already taken. Please choose another." };
 
-  const passwordHash = createHash("sha256").update(password).digest("hex");
+  const passwordHash = await hashPassword(password);
   await prisma.user.create({
     data: {
       email,
@@ -670,6 +774,7 @@ function getNutrient(nutrients: UsdaNutrient[], id: number): number {
 }
 
 export async function searchFoods(query: string): Promise<FoodSearchResult[]> {
+  await requireAuth();
   const q = query.trim();
   if (q.length < 2) return [];
 
@@ -727,6 +832,7 @@ export async function searchFoods(query: string): Promise<FoodSearchResult[]> {
 }
 
 export async function fetchFoodPortionSize(fdcId: number): Promise<number | null> {
+  await requireAuth();
   const cached = await prisma.foodCache.findUnique({ where: { fdcId } });
   if (cached && cached.gramsPerServing !== 100) return cached.gramsPerServing;
 
@@ -753,6 +859,7 @@ export async function updateFoodServing(
   servingUnit: FoodUnit,
   gramsPerServing: number,
 ): Promise<void> {
+  await requireAuth();
   await prisma.foodCache.update({
     where: { fdcId },
     data: { servingUnit, gramsPerServing },
@@ -783,9 +890,7 @@ export async function submitFeedback(
   category: FeedbackCategory,
   message: string,
 ): Promise<Feedback> {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) throw new Error("Unauthorized");
+  const userId = await requireAuth();
   const row = await prisma.feedback.create({
     data: { userId, title, category, message },
     include: { user: { select: { username: true } } },
@@ -794,9 +899,7 @@ export async function submitFeedback(
 }
 
 export async function fetchUserFeedback(): Promise<Feedback[]> {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) throw new Error("Unauthorized");
+  const userId = await requireAuth();
   const rows = await prisma.feedback.findMany({
     where: { userId },
     include: { user: { select: { username: true } } },
@@ -827,12 +930,9 @@ export async function updateFeedbackStatus(
 }
 
 export async function deleteFeedback(id: string): Promise<void> {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) throw new Error("Unauthorized");
+  const user = await currentUser();
   const row = await prisma.feedback.findUnique({ where: { id } });
   if (!row) return;
-  const isAdmin = session?.user?.role === "admin";
-  if (!isAdmin && row.userId !== userId) throw new Error("Forbidden");
+  if (user.role !== "admin" && row.userId !== user.id) throw new Error("Forbidden");
   await prisma.feedback.delete({ where: { id } });
 }

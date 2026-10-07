@@ -12,7 +12,7 @@ export function ThemeToggle() {
   // Avoid hydration mismatch — only render icon after mount
   useEffect(() => setMounted(true), []); // eslint-disable-line react-hooks/set-state-in-effect
 
-  if (!mounted) return <Button variant="ghost" size="icon" className="h-8 w-8" />;
+  if (!mounted) return <Button variant="ghost" size="icon" className="size-11 md:size-8" />;
 
   function cycle() {
     if (theme === "system") setTheme("light");
@@ -27,7 +27,7 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      className="h-8 w-8"
+      className="size-11 md:size-8"
       onClick={cycle}
       title={`Theme: ${label} — click to cycle`}
     >

@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Playwright — not React code, React Hooks rules don't apply
     "e2e/**",
     "playwright.config.ts",
+    "playwright-report/**",
+    "test-results/**",
   ]),
 ]);
 

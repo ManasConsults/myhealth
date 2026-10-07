@@ -1,6 +1,7 @@
-import { createHash } from "crypto";
 import { config } from "dotenv";
 import { Client } from "pg";
+import { hashPassword } from "../lib/password";
+import { toLocalISODate } from "../lib/utils";
 
 config();
 
@@ -13,19 +14,18 @@ export default async function globalSetup() {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
 
-  const passwordHash = createHash("sha256")
-    .update(E2E_ONBOARD_PASSWORD)
-    .digest("hex");
+  const passwordHash = await hashPassword(E2E_ONBOARD_PASSWORD);
 
   // Clean up today's logged entries for the demo member user to prevent accumulation
   // across repeated test runs (entries are not always cleaned up if a test fails mid-run).
-  const todayDate = new Date().toISOString().split("T")[0];
+  const todayDate = toLocalISODate(new Date());
   const memberRows = await client.query('SELECT id FROM "User" WHERE email = $1', ["member@demo.com"]);
   if (memberRows.rows.length > 0) {
     const memberId = memberRows.rows[0].id;
     await client.query('DELETE FROM "WorkoutLogEntry" WHERE "userId" = $1 AND date = $2', [memberId, todayDate]);
     await client.query('DELETE FROM "FoodEntry" WHERE "userId" = $1 AND date = $2', [memberId, todayDate]);
     await client.query('DELETE FROM "WaterEntry" WHERE "userId" = $1 AND date = $2', [memberId, todayDate]);
+    await client.query('DELETE FROM "WorkoutSession" WHERE "userId" = $1 AND date = $2', [memberId, todayDate]);
   }
 
   // Idempotent: delete then recreate

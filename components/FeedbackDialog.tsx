@@ -195,7 +195,7 @@ export function FeedbackDialog({ open, onOpenChange }: Props) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                          className="size-11 md:size-6 text-muted-foreground hover:text-destructive"
                           onClick={() => handleDelete(fb.id)}
                           disabled={isPending}
                           aria-label="Delete feedback"

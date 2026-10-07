@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { clearFoodLogForDate, fetchFoodPortionSize, logFood, logFoodsBatch, logWater, removeFood, removeWater, searchFoods, updateFoodServing } from "@/lib/actions";
+import { toLocalISODate } from "@/lib/utils";
 import {
   FOOD_UNIT_OPTIONS,
   FoodEntry,
@@ -75,7 +76,7 @@ interface Props {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function FoodLog({ allEntries, waterLog, plans, macroTargets, onUpdate }: Props) {
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalISODate(new Date());
 
   // Calendar state
   const [selectedDate, setSelectedDate] = useState(today);
@@ -431,7 +432,7 @@ export function FoodLog({ allEntries, waterLog, plans, macroTargets, onUpdate }:
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-7 w-7"
+                    className="size-11 md:size-7"
                     onClick={() => openAddDialog(meal)}
                     disabled={isPending}
                   >
@@ -460,7 +461,7 @@ export function FoodLog({ allEntries, waterLog, plans, macroTargets, onUpdate }:
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 shrink-0"
+                          className="size-11 md:size-7 shrink-0"
                           onClick={() => handleDeleteFood(entry.id)}
                           disabled={isPending}
                         >
@@ -516,9 +517,9 @@ export function FoodLog({ allEntries, waterLog, plans, macroTargets, onUpdate }:
                   value={waterInput}
                   onChange={(e) => setWaterInput(e.target.value)}
                   placeholder="ml"
-                  className="h-7 w-16 text-xs px-2"
+                  className="h-11 md:h-7 w-16 text-base md:text-xs px-2"
                 />
-                <Button type="submit" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={isPending || !waterInput}>
+                <Button type="submit" size="sm" variant="outline" className="h-11 md:h-7 px-2 text-xs" disabled={isPending || !waterInput}>
                   Add
                 </Button>
               </form>
@@ -533,7 +534,7 @@ export function FoodLog({ allEntries, waterLog, plans, macroTargets, onUpdate }:
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6"
+                      className="size-11 md:size-6"
                       onClick={() => handleDeleteWater(entry.id)}
                       disabled={isPending}
                     >
@@ -716,7 +717,7 @@ export function FoodLog({ allEntries, waterLog, plans, macroTargets, onUpdate }:
                       <select
                         value={foodUnit}
                         onChange={(e) => handleUnitChange(e.target.value as FoodUnit)}
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        className="flex h-11 md:h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base md:text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
                         {FOOD_UNIT_OPTIONS.map((u) => (
                           <option key={u} value={u}>{u}</option>
