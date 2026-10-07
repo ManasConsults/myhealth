@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { clearWorkoutLogForDate, logWorkout, logWorkoutsBatch, removeWorkoutLogEntry, setWorkoutExerciseCompleted, updateWorkoutLogEntry } from "@/lib/actions";
-import { ExerciseLibrary, WorkoutLogEntry, WorkoutPlan, WorkoutSet } from "@/lib/types";
+import { ExerciseLibrary, WorkoutLogEntry, WorkoutPlan, WorkoutSession, WorkoutSet } from "@/lib/types";
+import { ExerciseTimer, SessionBar, durationMs, useNow } from "@/components/workout/WorkoutTimer";
 import { toLocalISODate } from "@/lib/utils";
 import { BookOpen, CalendarDays, Check, CheckCircle2, ChevronLeft, Circle, ChevronRight, Copy, Pencil, Plus, Trash2, X } from "lucide-react";
 import { ExerciseType, EXERCISE_TYPE_LABELS, EXERCISE_TYPE_OPTIONS } from "@/lib/types";
@@ -56,6 +57,7 @@ type SetsMap = Record<string, WorkoutSet[]>;
 
 interface Props {
   log: WorkoutLogEntry[];
+  sessions: WorkoutSession[];
   plans: WorkoutPlan[];
   exerciseLibrary: ExerciseLibrary[];
   onUpdate: () => void;
@@ -63,7 +65,7 @@ interface Props {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props) {
+export function ExerciseLogger({ log, sessions, plans, exerciseLibrary, onUpdate }: Props) {
   const today = toLocalISODate(new Date());
 
   // Ad-hoc dialog
@@ -353,8 +355,17 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
   }, {});
   // Sort is stable, so completed exercises sink to the bottom while each half keeps its logged order
   const groupedList = Object.entries(grouped)
-    .map(([name, entries]) => ({ name, entries, completed: entries.every((e) => e.completed) }))
+    .map(([name, entries]) => {
+      // Times are written to every entry of the exercise at once; entries logged afterwards have none yet
+      const timed = entries.find((e) => e.startedAt || e.endedAt);
+      return { name, entries, completed: entries.every((e) => e.completed), startedAt: timed?.startedAt, endedAt: timed?.endedAt };
+    })
     .sort((a, b) => Number(a.completed) - Number(b.completed));
+
+  const daySession = sessions.find((s) => s.date === selectedDate);
+  const timerRunning = (!!daySession && !daySession.endedAt) || groupedList.some((g) => g.startedAt && !g.endedAt);
+  const now = useNow(timerRunning);
+  const exerciseMs = groupedList.reduce((sum, g) => sum + (durationMs(g.startedAt, g.endedAt, now) ?? 0), 0);
 
   const lastSessionByExercise = log
     .filter((e) => e.date < selectedDate)
@@ -446,6 +457,8 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
             </Button>
           </div>
         </div>
+
+        <SessionBar date={selectedDate} session={daySession} exerciseMs={exerciseMs} now={now} onUpdate={onUpdate} />
 
         {/* ── Ad-hoc dialog ──────────────────────────────────── */}
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setExerciseName(""); setExerciseType(null); setShowSuggestions(false); } }}>
@@ -760,10 +773,20 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
           </div>
         ) : (
           <div className="grid gap-3">
-            {groupedList.map(({ name, entries, completed }) => (
+            {groupedList.map(({ name, entries, completed, startedAt, endedAt }) => (
               <Card key={name} className={completed ? "opacity-60" : undefined}>
                 <CardHeader className="pb-2 pt-4 flex flex-row items-center justify-between gap-2">
-                  <CardTitle className={["text-sm", completed ? "line-through text-muted-foreground" : ""].join(" ")}>{name}</CardTitle>
+                  <CardTitle className={["text-sm min-w-0 truncate", completed ? "line-through text-muted-foreground" : ""].join(" ")}>{name}</CardTitle>
+                  <div className="flex items-center gap-1 shrink-0">
+                  <ExerciseTimer
+                    date={selectedDate}
+                    exerciseName={name}
+                    startedAt={startedAt}
+                    endedAt={endedAt}
+                    completed={completed}
+                    now={now}
+                    onUpdate={onUpdate}
+                  />
                   <button
                     type="button"
                     aria-pressed={completed}
@@ -778,6 +801,7 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
                     {completed ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
                     {completed ? "Done" : "Mark done"}
                   </button>
+                  </div>
                 </CardHeader>
                 <CardContent className="pb-4">
                   <Table>

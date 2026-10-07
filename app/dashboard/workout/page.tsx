@@ -6,13 +6,14 @@ import { PlanBuilder } from "@/components/workout/PlanBuilder";
 import { ExerciseLogger } from "@/components/workout/ExerciseLogger";
 import { WorkoutReports } from "@/components/workout/WorkoutReports";
 import { useAuth } from "@/lib/auth-context";
-import { fetchWorkoutPlans, fetchWorkoutLog, fetchExerciseLibrary } from "@/lib/actions";
-import { ExerciseLibrary, WorkoutLogEntry, WorkoutPlan } from "@/lib/types";
+import { fetchWorkoutPlans, fetchWorkoutLog, fetchExerciseLibrary, fetchWorkoutSessions } from "@/lib/actions";
+import { ExerciseLibrary, WorkoutLogEntry, WorkoutPlan, WorkoutSession } from "@/lib/types";
 
 export default function WorkoutPage() {
   const { user } = useAuth();
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [log, setLog] = useState<WorkoutLogEntry[]>([]);
+  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [exerciseLibrary, setExerciseLibrary] = useState<ExerciseLibrary[]>([]);
 
   async function reloadPlans() {
@@ -21,12 +22,14 @@ export default function WorkoutPage() {
 
   async function reloadLog() {
     if (user) {
-      const [entries, library] = await Promise.all([
+      const [entries, library, sessionList] = await Promise.all([
         fetchWorkoutLog(),
         fetchExerciseLibrary(),
+        fetchWorkoutSessions(),
       ]);
       setLog(entries);
       setExerciseLibrary(library);
+      setSessions(sessionList);
     }
   }
 
@@ -53,7 +56,7 @@ export default function WorkoutPage() {
         </TabsList>
 
         <TabsContent value="log" className="mt-4">
-          <ExerciseLogger log={log} plans={plans} exerciseLibrary={exerciseLibrary} onUpdate={reloadLog} />
+          <ExerciseLogger log={log} sessions={sessions} plans={plans} exerciseLibrary={exerciseLibrary} onUpdate={reloadLog} />
         </TabsContent>
 
         <TabsContent value="plans" className="mt-4">
@@ -61,7 +64,7 @@ export default function WorkoutPage() {
         </TabsContent>
 
         <TabsContent value="reports" className="mt-4">
-          <WorkoutReports log={log} />
+          <WorkoutReports log={log} gymSessions={sessions} />
         </TabsContent>
       </Tabs>
     </div>

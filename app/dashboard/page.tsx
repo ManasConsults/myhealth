@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { MacroDonut } from "@/components/MacroDonut";
 import { useAuth } from "@/lib/auth-context";
-import { fetchFoodLog, fetchWorkoutLog } from "@/lib/actions";
+import { fetchFoodLog, fetchWorkoutLog, fetchWorkoutSessions } from "@/lib/actions";
 import { useDailyTotals, useRemainingMacros } from "@/hooks/useCalculations";
-import { FoodEntry, GOAL_LABELS, WorkoutLogEntry } from "@/lib/types";
-import { toLocalISODate } from "@/lib/utils";
-import { Apple, Dumbbell, Flame, Target } from "lucide-react";
+import { FoodEntry, GOAL_LABELS, WorkoutLogEntry, WorkoutSession } from "@/lib/types";
+import { formatDuration, formatElapsed, toLocalISODate } from "@/lib/utils";
+import { durationMs, useNow } from "@/components/workout/WorkoutTimer";
+import { Apple, Dumbbell, Flame, Target, Timer } from "lucide-react";
 
 const MACRO_COLORS = {
   protein: "var(--chart-1)",
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [workoutLog, setWorkoutLog] = useState<WorkoutLogEntry[]>([]);
+  const [gymSession, setGymSession] = useState<WorkoutSession | null>(null);
   const today = toLocalISODate(new Date());
 
   useEffect(() => {
@@ -33,11 +35,15 @@ export default function DashboardPage() {
     if (user) {
       void fetchFoodLog(today).then(setEntries);
       void fetchWorkoutLog(today).then(setWorkoutLog);
+      void fetchWorkoutSessions(today).then((list) => setGymSession(list[0] ?? null));
     }
   }, [user, today]);
 
   const totals = useDailyTotals(entries);
   const remaining = useRemainingMacros(user?.macroTargets ?? null, totals);
+  const gymRunning = !!gymSession && !gymSession.endedAt;
+  const now = useNow(gymRunning);
+  const gymMs = durationMs(gymSession?.startedAt, gymSession?.endedAt, now);
 
   if (!user) return null;
 
@@ -175,6 +181,13 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="pb-4">
+            {gymMs !== null && (
+              <div className="flex items-center gap-2 mb-3 text-sm" data-testid="dashboard-gym-time">
+                <Timer className={`w-4 h-4 ${gymRunning ? "text-primary" : "text-muted-foreground"}`} />
+                <span className="text-muted-foreground">{gymRunning ? "At the gym" : "Time at gym"}</span>
+                <span className="font-semibold tabular-nums">{gymRunning ? formatElapsed(gymMs) : formatDuration(gymMs)}</span>
+              </div>
+            )}
             {workoutLog.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 No exercises logged yet today.
