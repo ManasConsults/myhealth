@@ -1,4 +1,5 @@
 import { RegisterForm } from "@/components/RegisterForm";
+import { googleEnabled } from "@/auth";
 
 export default async function RegisterPage({
   searchParams,
@@ -8,7 +9,7 @@ export default async function RegisterPage({
   const { status } = await searchParams;
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background to-muted/30 p-4">
-      <RegisterForm pendingStatus={status} />
+      <RegisterForm pendingStatus={status} googleEnabled={googleEnabled} />
     </div>
   );
 }

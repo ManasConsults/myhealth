@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
 import Facebook from "next-auth/providers/facebook";
 import Apple from "next-auth/providers/apple";
 import { randomBytes } from "crypto";
@@ -32,6 +33,10 @@ async function createOAuthUser(email: string, providerName: string | null) {
   });
 }
 
+// Login/register pages read this to decide whether to show the Google button, so a deployment without
+// credentials never offers a sign-in that would fail.
+export const googleEnabled = !!process.env.AUTH_GOOGLE_ID && !!process.env.AUTH_GOOGLE_SECRET;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
@@ -56,6 +61,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return { id: user.id, name: user.username, role: user.role } as { id: string; name: string; role: string };
       },
     }),
+    ...(googleEnabled
+      ? [Google({ clientId: process.env.AUTH_GOOGLE_ID, clientSecret: process.env.AUTH_GOOGLE_SECRET })]
+      : []),
     GitHub({
       clientId: process.env.AUTH_GITHUB_ID,
       clientSecret: process.env.AUTH_GITHUB_SECRET,
