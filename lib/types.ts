@@ -159,15 +159,6 @@ export interface WorkoutLogEntry {
   endedAt?: string;   // ISO timestamp — set when the exercise is marked done
 }
 
-// One gym visit per user per date
-export interface WorkoutSession {
-  id: string;
-  userId: string;
-  date: string;       // YYYY-MM-DD
-  startedAt: string;  // ISO timestamp
-  endedAt?: string;   // ISO timestamp; absent while the workout is in progress
-}
-
 export interface WorkoutDay {
   day: string; // e.g. "Monday", "Push Day"
   label?: string; // e.g. "Chest", "Leg Day", "Pull"

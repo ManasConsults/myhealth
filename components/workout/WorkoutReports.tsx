@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dumbbell, Calendar, TrendingUp, Layers, Timer } from "lucide-react";
-import type { WorkoutLogEntry, WorkoutSession } from "@/lib/types";
+import type { WorkoutLogEntry } from "@/lib/types";
+import { exerciseTimes } from "@/components/workout/WorkoutTimer";
 import { formatDuration, toLocalISODate } from "@/lib/utils";
 
 type Period = "week" | "month" | "year";
@@ -23,7 +24,6 @@ interface Session {
 
 interface Props {
   log: WorkoutLogEntry[];
-  gymSessions: WorkoutSession[];
 }
 
 function toLocal(s: string): Date {
@@ -77,7 +77,7 @@ function bucketBars(period: Period, byDate: Map<string, number>, today: string):
     }));
 }
 
-export function WorkoutReports({ log, gymSessions }: Props) {
+export function WorkoutReports({ log }: Props) {
   const [period, setPeriod] = useState<Period>("week");
   const [selectedExercise, setSelectedExercise] = useState("");
 
@@ -114,15 +114,19 @@ export function WorkoutReports({ log, gymSessions }: Props) {
 
   const volumeBars = useMemo(() => bucketBars(period, volByDate, today), [period, volByDate, today]);
 
-  // Finished sessions only — one still in progress has no length yet
+  // Gym time per day = sum of finished exercise durations; a timer still running has no length yet
   const gymMinutesByDate = useMemo(() => {
+    const byDate = new Map<string, WorkoutLogEntry[]>();
+    for (const e of periodLog) byDate.set(e.date, [...(byDate.get(e.date) ?? []), e]);
     const map = new Map<string, number>();
-    for (const s of gymSessions) {
-      if (!s.endedAt || s.date < startDate || s.date > today) continue;
-      map.set(s.date, (Date.parse(s.endedAt) - Date.parse(s.startedAt)) / 60000);
+    for (const [date, entries] of byDate) {
+      const minutes = exerciseTimes(entries)
+        .filter((t) => t.startedAt && t.endedAt)
+        .reduce((sum, t) => sum + (Date.parse(t.endedAt!) - Date.parse(t.startedAt!)) / 60000, 0);
+      if (minutes > 0) map.set(date, minutes);
     }
     return map;
-  }, [gymSessions, startDate, today]);
+  }, [periodLog]);
 
   const gymBars = useMemo(() => bucketBars(period, gymMinutesByDate, today), [period, gymMinutesByDate, today]);
   const maxGymBar = Math.max(...gymBars.map((b) => b.value), 1);
@@ -164,7 +168,7 @@ export function WorkoutReports({ log, gymSessions }: Props) {
   const displayDate = (d: string) =>
     toLocal(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  if (log.length === 0 && gymSessions.length === 0) {
+  if (log.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
         <Dumbbell className="w-10 h-10 mb-3 opacity-30" />

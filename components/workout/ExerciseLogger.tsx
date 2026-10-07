@@ -10,8 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { clearWorkoutLogForDate, logWorkout, logWorkoutsBatch, removeWorkoutLogEntry, setWorkoutExerciseCompleted, updateWorkoutLogEntry } from "@/lib/actions";
-import { ExerciseLibrary, WorkoutLogEntry, WorkoutPlan, WorkoutSession, WorkoutSet } from "@/lib/types";
-import { ExerciseTimer, SessionBar, durationMs, useNow } from "@/components/workout/WorkoutTimer";
+import { ExerciseLibrary, WorkoutLogEntry, WorkoutPlan, WorkoutSet } from "@/lib/types";
+import { ExerciseTimer, ForgottenWorkoutBanner, GymTimeBar, dayTiming, useNow } from "@/components/workout/WorkoutTimer";
 import { toLocalISODate } from "@/lib/utils";
 import { BookOpen, CalendarDays, Check, CheckCircle2, ChevronLeft, Circle, ChevronRight, Copy, Pencil, Plus, Trash2, X } from "lucide-react";
 import { ExerciseType, EXERCISE_TYPE_LABELS, EXERCISE_TYPE_OPTIONS } from "@/lib/types";
@@ -57,7 +57,6 @@ type SetsMap = Record<string, WorkoutSet[]>;
 
 interface Props {
   log: WorkoutLogEntry[];
-  sessions: WorkoutSession[];
   plans: WorkoutPlan[];
   exerciseLibrary: ExerciseLibrary[];
   onUpdate: () => void;
@@ -65,7 +64,7 @@ interface Props {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function ExerciseLogger({ log, sessions, plans, exerciseLibrary, onUpdate }: Props) {
+export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props) {
   const today = toLocalISODate(new Date());
 
   // Ad-hoc dialog
@@ -362,10 +361,9 @@ export function ExerciseLogger({ log, sessions, plans, exerciseLibrary, onUpdate
     })
     .sort((a, b) => Number(a.completed) - Number(b.completed));
 
-  const daySession = sessions.find((s) => s.date === selectedDate);
-  const timerRunning = (!!daySession && !daySession.endedAt) || groupedList.some((g) => g.startedAt && !g.endedAt);
+  const timerRunning = groupedList.some((g) => g.startedAt && !g.endedAt);
   const now = useNow(timerRunning);
-  const exerciseMs = groupedList.reduce((sum, g) => sum + (durationMs(g.startedAt, g.endedAt, now) ?? 0), 0);
+  const timing = dayTiming(filteredLog, now);
 
   const lastSessionByExercise = log
     .filter((e) => e.date < selectedDate)
@@ -399,6 +397,7 @@ export function ExerciseLogger({ log, sessions, plans, exerciseLibrary, onUpdate
         <div className="flex lg:hidden items-center gap-2">
           <button
             onClick={() => navigateDay(-1)}
+            aria-label="Previous day"
             className="min-w-11 min-h-11 flex items-center justify-center rounded-lg border hover:bg-muted transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -423,6 +422,7 @@ export function ExerciseLogger({ log, sessions, plans, exerciseLibrary, onUpdate
           </div>
           <button
             onClick={() => navigateDay(1)}
+            aria-label="Next day"
             disabled={selectedDate >= today}
             className="min-w-11 min-h-11 flex items-center justify-center rounded-lg border hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-default"
           >
@@ -431,34 +431,38 @@ export function ExerciseLogger({ log, sessions, plans, exerciseLibrary, onUpdate
         </div>
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-2">
-          <div>
+        {/* Mobile: primary action full-width on its own row, secondary actions share the row below.
+            sm+: one right-aligned row that wraps under the title when the column is narrow. */}
+        <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-3">
+          <div className="min-w-0">
             <h3 className="font-semibold">Exercise Log</h3>
             <p className="text-xs text-muted-foreground">{selectedLabel}</p>
           </div>
-          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:justify-end">
             {filteredLog.length > 0 && (
-              <Button variant="ghost" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleClearDay} disabled={isPending}>
+              <Button variant="ghost" size="sm" className="flex-1 sm:flex-none gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleClearDay} disabled={isPending}>
                 <X className="w-3.5 h-3.5" />Clear day
               </Button>
             )}
             {copySourceDates.length > 0 && (
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={openCopySheet}>
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none gap-1.5" onClick={openCopySheet}>
                 <Copy className="w-3.5 h-3.5" />Copy Day
               </Button>
             )}
             {plans.length > 0 && (
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={openPlanSheet}>
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none gap-1.5" onClick={openPlanSheet}>
                 <BookOpen className="w-3.5 h-3.5" />Log from Plan
               </Button>
             )}
-            <Button size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+            <Button size="sm" className="basis-full sm:basis-auto order-first sm:order-last gap-1.5" onClick={() => setOpen(true)}>
               <Plus className="w-4 h-4" />Log Exercise
             </Button>
           </div>
         </div>
 
-        <SessionBar date={selectedDate} session={daySession} exerciseMs={exerciseMs} now={now} onUpdate={onUpdate} />
+        <ForgottenWorkoutBanner log={log} today={today} now={now} onUpdate={onUpdate} />
+
+        <GymTimeBar timing={timing} />
 
         {/* ── Ad-hoc dialog ──────────────────────────────────── */}
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setExerciseName(""); setExerciseType(null); setShowSuggestions(false); } }}>
@@ -780,6 +784,7 @@ export function ExerciseLogger({ log, sessions, plans, exerciseLibrary, onUpdate
                   <div className="flex items-center gap-1 shrink-0">
                   <ExerciseTimer
                     date={selectedDate}
+                    isToday={selectedDate === today}
                     exerciseName={name}
                     startedAt={startedAt}
                     endedAt={endedAt}
@@ -874,6 +879,7 @@ export function ExerciseLogger({ log, sessions, plans, exerciseLibrary, onUpdate
             <div className="flex items-center justify-between mb-3">
               <button
                 onClick={() => setDisplayMonth(({ year: y, month: m }) => m === 0 ? { year: y - 1, month: 11 } : { year: y, month: m - 1 })}
+                aria-label="Previous month"
                 className="min-w-11 min-h-11 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -881,6 +887,7 @@ export function ExerciseLogger({ log, sessions, plans, exerciseLibrary, onUpdate
               <span className="text-sm font-semibold">{MONTH_NAMES[month]} {year}</span>
               <button
                 onClick={() => setDisplayMonth(({ year: y, month: m }) => m === 11 ? { year: y + 1, month: 0 } : { year: y, month: m + 1 })}
+                aria-label="Next month"
                 className="min-w-11 min-h-11 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -909,6 +916,8 @@ export function ExerciseLogger({ log, sessions, plans, exerciseLibrary, onUpdate
                           setSelectedDate(dateStr);
                         }}
                         disabled={isFuture}
+                        aria-label={fmtDate(dateStr)}
+                        aria-pressed={isSelected}
                         className={[
                           "relative w-8 h-8 rounded-full text-xs font-medium flex items-center justify-center transition-colors",
                           isSelected ? "bg-primary text-primary-foreground"

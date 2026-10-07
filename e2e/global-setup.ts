@@ -25,7 +25,8 @@ export default async function globalSetup() {
     await client.query('DELETE FROM "WorkoutLogEntry" WHERE "userId" = $1 AND date = $2', [memberId, todayDate]);
     await client.query('DELETE FROM "FoodEntry" WHERE "userId" = $1 AND date = $2', [memberId, todayDate]);
     await client.query('DELETE FROM "WaterEntry" WHERE "userId" = $1 AND date = $2', [memberId, todayDate]);
-    await client.query('DELETE FROM "WorkoutSession" WHERE "userId" = $1 AND date = $2', [memberId, todayDate]);
+    // Any date: the forgotten-timer test logs an exercise on yesterday's date
+    await client.query(`DELETE FROM "WorkoutLogEntry" WHERE "userId" = $1 AND "exerciseName" LIKE 'E2E Test%'`, [memberId]);
   }
 
   // Idempotent: delete then recreate

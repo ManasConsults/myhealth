@@ -32,7 +32,6 @@ import type {
   WorkoutDay,
   WorkoutLogEntry,
   WorkoutPlan,
-  WorkoutSession,
   WorkoutSet,
 } from "./types";
 import type {
@@ -43,7 +42,6 @@ import type {
   NutritionPlan as DbNutritionPlan,
   WorkoutPlan as DbWorkoutPlan,
   WorkoutLogEntry as DbWorkoutLogEntry,
-  WorkoutSession as DbWorkoutSession,
   ExerciseLibrary as DbExerciseLibrary,
   FoodCache as DbFoodCache,
   Feedback as DbFeedback,
@@ -153,16 +151,6 @@ function toWorkoutLogEntry(e: DbWorkoutLogEntry): WorkoutLogEntry {
     completed: e.completed,
     startedAt: e.startedAt?.toISOString(),
     endedAt: e.endedAt?.toISOString(),
-  };
-}
-
-function toWorkoutSession(s: DbWorkoutSession): WorkoutSession {
-  return {
-    id: s.id,
-    userId: s.userId,
-    date: s.date,
-    startedAt: s.startedAt.toISOString(),
-    endedAt: s.endedAt?.toISOString(),
   };
 }
 
@@ -492,56 +480,21 @@ export async function logWorkoutsBatch(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Workout sessions (time at the gym)
-// ---------------------------------------------------------------------------
-
-// Starting again after ending resumes the same session rather than resetting its start time.
-export async function startWorkoutSession(date: string): Promise<WorkoutSession> {
+// Stops every exercise timer the user left running on `date` at `endedAt`. An exercise started after that
+// time stops at its own start (zero length) rather than ending before it began.
+export async function finishForgottenExercises(date: string, endedAt: string): Promise<void> {
   const userId = await requireAuth();
-  const session = await prisma.workoutSession.upsert({
-    where: { userId_date: { userId, date } },
-    update: { endedAt: null },
-    create: { userId, date, startedAt: new Date() },
+  const end = new Date(endedAt);
+  if (Number.isNaN(end.getTime())) throw new Error("Invalid time");
+  const running = await prisma.workoutLogEntry.findMany({
+    where: { userId, date, startedAt: { not: null }, endedAt: null },
+    select: { id: true, startedAt: true },
   });
-  return toWorkoutSession(session);
-}
-
-export async function endWorkoutSession(date: string): Promise<WorkoutSession | null> {
-  const userId = await requireAuth();
-  const { count } = await prisma.workoutSession.updateMany({ where: { userId, date }, data: { endedAt: new Date() } });
-  if (!count) return null;
-  const session = await prisma.workoutSession.findUnique({ where: { userId_date: { userId, date } } });
-  return session ? toWorkoutSession(session) : null;
-}
-
-export async function updateWorkoutSessionTimes(
-  date: string,
-  startedAt: string,
-  endedAt: string | null,
-): Promise<WorkoutSession> {
-  const userId = await requireAuth();
-  const { start, end } = parseTimeRange(startedAt, endedAt);
-  const session = await prisma.workoutSession.upsert({
-    where: { userId_date: { userId, date } },
-    update: { startedAt: start, endedAt: end },
-    create: { userId, date, startedAt: start, endedAt: end },
-  });
-  return toWorkoutSession(session);
-}
-
-export async function removeWorkoutSession(date: string): Promise<void> {
-  const userId = await requireAuth();
-  await prisma.workoutSession.deleteMany({ where: { userId, date } });
-}
-
-export async function fetchWorkoutSessions(date?: string): Promise<WorkoutSession[]> {
-  const userId = await requireAuth();
-  const sessions = await prisma.workoutSession.findMany({
-    where: { userId, ...(date ? { date } : {}) },
-    orderBy: { date: "asc" },
-  });
-  return sessions.map(toWorkoutSession);
+  await prisma.$transaction(
+    running.map((e) =>
+      prisma.workoutLogEntry.update({ where: { id: e.id }, data: { endedAt: e.startedAt! > end ? e.startedAt : end } }),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
