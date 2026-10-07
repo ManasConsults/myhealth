@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dumbbell, Calendar, TrendingUp, Layers } from "lucide-react";
 import type { WorkoutLogEntry } from "@/lib/types";
+import { toLocalISODate } from "@/lib/utils";
 
 type Period = "week" | "month" | "year";
 
@@ -24,10 +25,6 @@ interface Props {
   log: WorkoutLogEntry[];
 }
 
-function fmtDate(d: Date): string {
-  return d.toISOString().split("T")[0];
-}
-
 function toLocal(s: string): Date {
   return new Date(s + "T00:00:00");
 }
@@ -40,14 +37,14 @@ export function WorkoutReports({ log }: Props) {
   const [period, setPeriod] = useState<Period>("week");
   const [selectedExercise, setSelectedExercise] = useState("");
 
-  const today = useMemo(() => fmtDate(new Date()), []);
+  const today = useMemo(() => toLocalISODate(new Date()), []);
 
   const startDate = useMemo(() => {
     const d = new Date();
     if (period === "week") d.setDate(d.getDate() - 6);
     else if (period === "month") d.setDate(d.getDate() - 29);
     else d.setDate(d.getDate() - 364);
-    return fmtDate(d);
+    return toLocalISODate(d);
   }, [period]);
 
   const periodLog = useMemo(
@@ -78,7 +75,7 @@ export function WorkoutReports({ log }: Props) {
         d.setDate(d.getDate() - (6 - i));
         return {
           label: d.toLocaleDateString("en-US", { weekday: "short" }),
-          value: Math.round(volByDate.get(fmtDate(d)) ?? 0),
+          value: Math.round(volByDate.get(toLocalISODate(d)) ?? 0),
         };
       });
     }
@@ -265,7 +262,7 @@ export function WorkoutReports({ log }: Props) {
             <select
               value={effectiveExercise}
               onChange={(e) => setSelectedExercise(e.target.value)}
-              className="text-sm border border-input rounded-lg px-3 bg-background min-h-11 sm:h-9 sm:min-h-0"
+              className="text-base sm:text-sm border border-input rounded-lg px-3 bg-background min-h-11 sm:h-9 sm:min-h-0"
             >
               {exerciseNames.map((name) => (
                 <option key={name} value={name}>

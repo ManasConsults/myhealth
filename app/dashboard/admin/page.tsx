@@ -43,10 +43,10 @@ export default function AdminPage() {
       </div>
 
       <Tabs defaultValue="users">
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="users" className="flex-1 sm:flex-none">User Management</TabsTrigger>
-          <TabsTrigger value="exercises" className="flex-1 sm:flex-none">Exercise Library</TabsTrigger>
-          <TabsTrigger value="settings" className="flex-1 sm:flex-none">Global Settings</TabsTrigger>
+        <TabsList className="w-full sm:w-fit">
+          <TabsTrigger value="users" className="flex-1 sm:flex-none"><span className="sm:hidden">Users</span><span className="hidden sm:inline">User Management</span></TabsTrigger>
+          <TabsTrigger value="exercises" className="flex-1 sm:flex-none"><span className="sm:hidden">Exercises</span><span className="hidden sm:inline">Exercise Library</span></TabsTrigger>
+          <TabsTrigger value="settings" className="flex-1 sm:flex-none"><span className="sm:hidden">Settings</span><span className="hidden sm:inline">Global Settings</span></TabsTrigger>
           <TabsTrigger value="feedback" className="flex-1 sm:flex-none">Feedback</TabsTrigger>
         </TabsList>
 

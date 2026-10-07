@@ -1,6 +1,6 @@
-import { createHash } from "crypto";
 import { config } from "dotenv";
 import { Client } from "pg";
+import { hashPassword } from "../lib/password";
 
 config();
 
@@ -13,9 +13,7 @@ export default async function globalSetup() {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
 
-  const passwordHash = createHash("sha256")
-    .update(E2E_ONBOARD_PASSWORD)
-    .digest("hex");
+  const passwordHash = await hashPassword(E2E_ONBOARD_PASSWORD);
 
   // Clean up today's logged entries for the demo member user to prevent accumulation
   // across repeated test runs (entries are not always cleaned up if a test fails mid-run).

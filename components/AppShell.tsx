@@ -111,26 +111,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="size-11 md:size-8"
               onClick={() => setFeedbackOpen(true)}
               aria-label="Feedback"
             >
               <MessageSquare className="w-4 h-4" />
             </Button>
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout} aria-label="Log out">
+            <Button variant="ghost" size="icon" className="size-11 md:size-8" onClick={handleLogout} aria-label="Log out">
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </header>
 
         {/* Page content */}
-        <main id="main-content" className="flex-1 p-4 sm:p-6 pb-24 md:pb-6">
+        <main id="main-content" className="flex-1 p-4 sm:p-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6">
           {children}
         </main>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-card/90 backdrop-blur-sm flex items-center justify-around px-2 py-1 z-10">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-card/90 backdrop-blur-sm flex items-center px-1 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] z-10">
           {visibleNav.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
@@ -138,13 +138,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg min-w-11 min-h-11 justify-center transition-colors",
+                  "flex-1 min-w-0 flex flex-col items-center gap-0.5 px-1 py-1.5 rounded-lg min-h-11 justify-center transition-colors",
                   active ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Icon className="w-5 h-5" />
-                <span className="text-[10px]">{item.label}</span>
+                <span className="text-[10px] max-w-full truncate">{item.label}</span>
               </Link>
             );
           })}
@@ -162,6 +163,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   return (
     <Link
       href={item.href}
+      aria-current={active ? "page" : undefined}
       className={cn(
         "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
         active

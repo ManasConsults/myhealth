@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { FoodEntry, MacroTargets, WaterEntry } from "@/lib/types";
+import { toLocalISODate } from "@/lib/utils";
 import { AlertCircle, Droplets } from "lucide-react";
 
 const WATER_TARGET_ML = 2500;
@@ -17,10 +18,6 @@ interface Props {
 }
 
 // ── Data helpers ──────────────────────────────────────────────────────────────
-
-function todayIso() {
-  return new Date().toISOString().split("T")[0];
-}
 
 function buildFoodMap(entries: FoodEntry[]) {
   const map = new Map<string, { cal: number; pro: number; carbs: number; fat: number }>();
@@ -77,7 +74,7 @@ function getDayBars(period: "week" | "month", today: string, foodMap: FoodMap, w
     for (let i = 6; i >= 0; i--) {
       const d = new Date(base);
       d.setDate(base.getDate() - i);
-      dates.push(d.toISOString().split("T")[0]);
+      dates.push(toLocalISODate(d));
     }
   } else {
     const y = base.getFullYear(), m = base.getMonth();
@@ -147,7 +144,7 @@ function computeStreak(foodMap: FoodMap, today: string): number {
   for (let i = 0; ; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() - i);
-    if (foodMap.has(d.toISOString().split("T")[0])) streak++;
+    if (foodMap.has(toLocalISODate(d))) streak++;
     else break;
   }
   return streak;
@@ -188,7 +185,7 @@ function StatCard({ label, value, sub, highlight, warn }: {
 
 export function NutritionReports({ allEntries, waterLog, macroTargets }: Props) {
   const [period, setPeriod] = useState<Period>("week");
-  const today = todayIso();
+  const today = toLocalISODate(new Date());
 
   const foodMap = useMemo(() => buildFoodMap(allEntries), [allEntries]);
   const waterMap = useMemo(() => buildWaterMap(waterLog), [waterLog]);
@@ -266,7 +263,7 @@ export function NutritionReports({ allEntries, waterLog, macroTargets }: Props) 
             type="button"
             onClick={() => setPeriod(p)}
             className={[
-              "flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-medium transition-all capitalize",
+              "flex-1 sm:flex-none min-h-11 md:min-h-0 px-4 py-1.5 rounded-lg text-sm font-medium transition-all capitalize",
               period === p
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",

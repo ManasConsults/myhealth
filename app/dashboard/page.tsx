@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { fetchFoodLog, fetchWorkoutLog } from "@/lib/actions";
 import { useDailyTotals, useRemainingMacros } from "@/hooks/useCalculations";
 import { FoodEntry, GOAL_LABELS, WorkoutLogEntry } from "@/lib/types";
+import { toLocalISODate } from "@/lib/utils";
 import { Apple, Dumbbell, Flame, Target } from "lucide-react";
 
 const MACRO_COLORS = {
@@ -22,7 +23,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [workoutLog, setWorkoutLog] = useState<WorkoutLogEntry[]>([]);
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalISODate(new Date());
 
   useEffect(() => {
     if (user && !user.onboardingComplete) router.replace("/onboarding");

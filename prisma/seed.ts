@@ -1,10 +1,8 @@
 import { PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { createHash } from "crypto";
+import { hashPassword } from "../lib/password";
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
-
-const hash = (pwd: string) => createHash("sha256").update(pwd).digest("hex");
 
 const TODAY = new Date().toISOString().split("T")[0];
 
@@ -29,7 +27,7 @@ async function main() {
       id: "demo-user",
       email: "member@demo.com",
       username: "member",
-      password: hash("member123"),
+      password: await hashPassword("member123"),
       role: "user",
       status: "approved",
       planningMode: "guided",
@@ -52,7 +50,7 @@ async function main() {
       id: "demo-admin",
       email: "admin@demo.com",
       username: "admin",
-      password: hash("admin123"),
+      password: await hashPassword("admin123"),
       role: "admin",
       status: "approved",
       planningMode: "manual",

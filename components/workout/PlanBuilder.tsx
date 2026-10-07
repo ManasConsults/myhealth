@@ -252,7 +252,7 @@ export function PlanBuilder({ plans, exerciseLibrary, onUpdate }: Props) {
                     type="button"
                     variant={isDayActive ? "outline" : "default"}
                     size="sm"
-                    className="text-xs h-8"
+                    className="text-xs h-11 md:h-8"
                     onClick={() => isDayActive ? setDayRest(selectedDay) : activateDay(selectedDay)}
                   >
                     {isDayActive ? "Set Rest" : "Train"}
@@ -268,7 +268,7 @@ export function PlanBuilder({ plans, exerciseLibrary, onUpdate }: Props) {
                         value={labels[selectedDay] ?? ""}
                         onChange={(e) => setLabels((prev) => ({ ...prev, [selectedDay]: e.target.value }))}
                         placeholder="e.g. Chest, Pull Day, Legs"
-                        className="h-8 text-sm"
+                        className="h-11 md:h-8 text-base md:text-sm"
                       />
                     </div>
 
@@ -375,7 +375,7 @@ export function PlanBuilder({ plans, exerciseLibrary, onUpdate }: Props) {
                           value={customInput}
                           onChange={(e) => setCustomInput(e.target.value)}
                           placeholder="Add custom exercise…"
-                          className="flex-1 h-9 text-sm"
+                          className="flex-1 h-11 md:h-9 text-base md:text-sm"
                           onKeyDown={(e) => {
                             if (e.key === "Enter") { e.preventDefault(); addCustomExercise(); }
                           }}
@@ -384,7 +384,7 @@ export function PlanBuilder({ plans, exerciseLibrary, onUpdate }: Props) {
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="h-9 px-3"
+                          className="h-11 md:h-9 px-3"
                           onClick={addCustomExercise}
                         >
                           <Plus className="w-4 h-4" />
@@ -474,7 +474,7 @@ export function PlanBuilder({ plans, exerciseLibrary, onUpdate }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="size-11 md:size-8"
                         onClick={() => setExpandedPlan(isExpanded ? null : plan.id)}
                       >
                         {isExpanded
@@ -484,7 +484,7 @@ export function PlanBuilder({ plans, exerciseLibrary, onUpdate }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="size-11 md:size-8"
                         onClick={() => openEditSheet(plan)}
                         disabled={isPending}
                       >
@@ -493,7 +493,7 @@ export function PlanBuilder({ plans, exerciseLibrary, onUpdate }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="size-11 md:size-8"
                         onClick={() => handleDelete(plan.id)}
                         disabled={isPending}
                       >

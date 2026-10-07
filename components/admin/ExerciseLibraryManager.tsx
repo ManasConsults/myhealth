@@ -209,7 +209,7 @@ export function ExerciseLibraryManager({ library, onUpdate }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7"
+                        className="size-11 md:size-7"
                         onClick={() => openEdit(ex)}
                         disabled={isPending}
                       >
@@ -218,7 +218,7 @@ export function ExerciseLibraryManager({ library, onUpdate }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7"
+                        className="size-11 md:size-7"
                         onClick={() => handleDelete(ex.id)}
                         disabled={isPending}
                       >

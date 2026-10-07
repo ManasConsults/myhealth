@@ -9,9 +9,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { clearWorkoutLogForDate, logWorkout, logWorkoutsBatch, removeWorkoutLogEntry, updateWorkoutLogEntry } from "@/lib/actions";
+import { clearWorkoutLogForDate, logWorkout, logWorkoutsBatch, removeWorkoutLogEntry, setWorkoutExerciseCompleted, updateWorkoutLogEntry } from "@/lib/actions";
 import { ExerciseLibrary, WorkoutLogEntry, WorkoutPlan, WorkoutSet } from "@/lib/types";
-import { BookOpen, CalendarDays, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
+import { toLocalISODate } from "@/lib/utils";
+import { BookOpen, CalendarDays, Check, CheckCircle2, ChevronLeft, Circle, ChevronRight, Copy, Pencil, Plus, Trash2, X } from "lucide-react";
 import { ExerciseType, EXERCISE_TYPE_LABELS, EXERCISE_TYPE_OPTIONS } from "@/lib/types";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -43,14 +44,10 @@ function fmtDate(iso: string) {
   });
 }
 
-function toLocalISO(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 function addDays(iso: string, delta: number): string {
   const d = new Date(`${iso}T00:00:00`);
   d.setDate(d.getDate() + delta);
-  return toLocalISO(d);
+  return toLocalISODate(d);
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -67,7 +64,7 @@ interface Props {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props) {
-  const today = toLocalISO(new Date());
+  const today = toLocalISODate(new Date());
 
   // Ad-hoc dialog
   const [open, setOpen] = useState(false);
@@ -89,6 +86,11 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
   // When today is a rest day, user can pick a plan day to borrow exercises from — still logged for today
   const [borrowDay, setBorrowDay] = useState<string | null>(null);
   const [setsMap, setSetsMap] = useState<SetsMap>({});
+
+  // Copy-from-day sheet
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [copySourceDate, setCopySourceDate] = useState<string | null>(null);
+  const [copySelectedIds, setCopySelectedIds] = useState<Set<string>>(new Set());
 
   // Date state
   const [selectedDate, setSelectedDate] = useState(today);
@@ -160,6 +162,13 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
     setConfirmClearOpen(false);
     startTransition(async () => {
       await clearWorkoutLogForDate(selectedDate);
+      onUpdate();
+    });
+  }
+
+  function handleToggleCompleted(name: string, completed: boolean) {
+    startTransition(async () => {
+      await setWorkoutExerciseCompleted(selectedDate, name, completed);
       onUpdate();
     });
   }
@@ -277,6 +286,43 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
     });
   }
 
+  // ── Copy from day ──────────────────────────────────────────────
+
+  function selectCopySource(date: string) {
+    setCopySourceDate(date);
+    setCopySelectedIds(new Set(log.filter((e) => e.date === date).map((e) => e.id)));
+  }
+
+  function openCopySheet() {
+    // Most recent session before the selected date is the likeliest one to repeat
+    const initial = copySourceDates.find((d) => d < selectedDate) ?? copySourceDates[0];
+    if (!initial) return;
+    selectCopySource(initial);
+    setCopyOpen(true);
+  }
+
+  function toggleCopyEntry(id: string) {
+    setCopySelectedIds((p) => {
+      const next = new Set(p);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleCopy(e: React.BaseSyntheticEvent) {
+    e.preventDefault();
+    const entries = copySourceEntries
+      .filter((entry) => copySelectedIds.has(entry.id))
+      .map((entry) => ({ exerciseName: entry.exerciseName, sets: entry.sets.map((s) => ({ ...s })), date: selectedDate }));
+    if (!entries.length) return;
+    startTransition(async () => {
+      await logWorkoutsBatch(entries);
+      setCopyOpen(false);
+      onUpdate();
+    });
+  }
+
   // ── Calendar ───────────────────────────────────────────────────
 
   const { year, month } = displayMonth;
@@ -305,6 +351,10 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
     acc[e.exerciseName].push(e);
     return acc;
   }, {});
+  // Sort is stable, so completed exercises sink to the bottom while each half keeps its logged order
+  const groupedList = Object.entries(grouped)
+    .map(([name, entries]) => ({ name, entries, completed: entries.every((e) => e.completed) }))
+    .sort((a, b) => Number(a.completed) - Number(b.completed));
 
   const lastSessionByExercise = log
     .filter((e) => e.date < selectedDate)
@@ -317,6 +367,9 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
       }
       return acc;
     }, {});
+
+  const copySourceDates = [...datesWithEntries].filter((d) => d !== selectedDate).sort().reverse();
+  const copySourceEntries = copySourceDate ? log.filter((e) => e.date === copySourceDate) : [];
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId);
   const activeTodaySource = borrowDay
@@ -376,6 +429,11 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
             {filteredLog.length > 0 && (
               <Button variant="ghost" size="sm" className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleClearDay} disabled={isPending}>
                 <X className="w-3.5 h-3.5" />Clear day
+              </Button>
+            )}
+            {copySourceDates.length > 0 && (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={openCopySheet}>
+                <Copy className="w-3.5 h-3.5" />Copy Day
               </Button>
             )}
             {plans.length > 0 && (
@@ -457,7 +515,7 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
                     <Input type="number" min={0} step="any" value={set.weight} onChange={(e) => updateSet(idx, "weight", parseFloat(e.target.value) || 0)} className="w-20" placeholder="kg" />
                     <span className="text-xs text-muted-foreground shrink-0">kg</span>
                     {sets.length > 1 && (
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeSet(idx)}>
+                      <Button type="button" variant="ghost" size="icon" className="size-11 md:size-7" onClick={() => removeSet(idx)}>
                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
                       </Button>
                     )}
@@ -488,7 +546,7 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
                     <Input type="number" min={0} step="any" value={set.weight} onChange={(e) => updateEditSet(idx, "weight", parseFloat(e.target.value) || 0)} className="w-20" placeholder="kg" />
                     <span className="text-xs text-muted-foreground shrink-0">kg</span>
                     {editSets.length > 1 && (
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeEditSet(idx)}>
+                      <Button type="button" variant="ghost" size="icon" className="size-11 md:size-7" onClick={() => removeEditSet(idx)}>
                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
                       </Button>
                     )}
@@ -608,8 +666,81 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
           </SheetContent>
         </Sheet>
 
+        {/* ── Copy from day sheet ─────────────────────────────── */}
+        <Sheet open={copyOpen} onOpenChange={setCopyOpen}>
+          <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0">
+            <SheetHeader className="px-5 pt-5 pb-4 border-b shrink-0">
+              <SheetTitle>Copy from another day</SheetTitle>
+            </SheetHeader>
+
+            <form onSubmit={handleCopy} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+                <div className="space-y-2">
+                  <Label>Source day</Label>
+                  <div className="flex gap-1.5 overflow-x-auto pb-1">
+                    {copySourceDates.map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => selectCopySource(d)}
+                        className={[
+                          "shrink-0 min-h-11 px-3 rounded-xl border text-xs font-medium transition-all",
+                          copySourceDate === d
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                            : "bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:text-foreground",
+                        ].join(" ")}
+                      >
+                        {fmtDate(d)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {copySourceEntries.map((entry) => {
+                    const checked = copySelectedIds.has(entry.id);
+                    return (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        aria-pressed={checked}
+                        onClick={() => toggleCopyEntry(entry.id)}
+                        className={[
+                          "w-full min-h-11 flex items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
+                          checked ? "border-primary bg-primary/5" : "bg-card hover:bg-muted/50",
+                        ].join(" ")}
+                      >
+                        <span className={[
+                          "mt-0.5 w-5 h-5 shrink-0 rounded-md border flex items-center justify-center",
+                          checked ? "bg-primary border-primary text-primary-foreground" : "border-border",
+                        ].join(" ")}>
+                          {checked && <Check className="w-3.5 h-3.5" />}
+                        </span>
+                        <span className="flex-1 min-w-0 space-y-1">
+                          <span className="block text-sm font-medium">{entry.exerciseName}</span>
+                          <span className="block text-xs text-muted-foreground">
+                            {entry.sets.map((s) => `${s.reps} × ${s.weight} kg`).join(" · ")}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="shrink-0 px-5 py-4 border-t bg-popover">
+                <Button type="submit" className="w-full" disabled={isPending || copySelectedIds.size === 0}>
+                  {isPending
+                    ? "Copying…"
+                    : `Copy ${copySelectedIds.size} exercise${copySelectedIds.size !== 1 ? "s" : ""} to ${selectedLabel}`}
+                </Button>
+              </div>
+            </form>
+          </SheetContent>
+        </Sheet>
+
         {/* ── Log list ───────────────────────────────────────── */}
-        {Object.keys(grouped).length === 0 ? (
+        {groupedList.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-muted/20 py-10 text-center space-y-1">
             <p className="text-sm font-medium text-muted-foreground">
               No exercises logged for {selectedLabel.toLowerCase()}.
@@ -629,10 +760,24 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
           </div>
         ) : (
           <div className="grid gap-3">
-            {Object.entries(grouped).map(([name, entries]) => (
-              <Card key={name}>
-                <CardHeader className="pb-2 pt-4">
-                  <CardTitle className="text-sm">{name}</CardTitle>
+            {groupedList.map(({ name, entries, completed }) => (
+              <Card key={name} className={completed ? "opacity-60" : undefined}>
+                <CardHeader className="pb-2 pt-4 flex flex-row items-center justify-between gap-2">
+                  <CardTitle className={["text-sm", completed ? "line-through text-muted-foreground" : ""].join(" ")}>{name}</CardTitle>
+                  <button
+                    type="button"
+                    aria-pressed={completed}
+                    aria-label={completed ? `Mark ${name} as not done` : `Mark ${name} as done`}
+                    onClick={() => handleToggleCompleted(name, !completed)}
+                    disabled={isPending}
+                    className={[
+                      "min-h-11 -my-2 -mr-2 px-2 flex items-center gap-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50",
+                      completed ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ].join(" ")}
+                  >
+                    {completed ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                    {completed ? "Done" : "Mark done"}
+                  </button>
                 </CardHeader>
                 <CardContent className="pb-4">
                   <Table>
@@ -657,14 +802,14 @@ export function ExerciseLogger({ log, plans, exerciseLibrary, onUpdate }: Props)
                               {setIdx === 0 && (
                                 <div className="flex items-center gap-0.5">
                                   <Button
-                                    variant="ghost" size="icon" className="h-7 w-7"
+                                    variant="ghost" size="icon" className="size-11 md:size-7"
                                     onClick={() => openEdit(entry)}
                                     disabled={isPending}
                                   >
                                     <Pencil className="w-3.5 h-3.5" />
                                   </Button>
                                   <Button
-                                    variant="ghost" size="icon" className="h-7 w-7"
+                                    variant="ghost" size="icon" className="size-11 md:size-7"
                                     onClick={() => handleDeleteEntry(entry.id)}
                                     disabled={isPending}
                                   >
@@ -809,20 +954,20 @@ function ExerciseSetEditor({ exerciseName, sets, onAdd, onRemove, onUpdate }: Ed
             <Input
               type="number" min={1} value={set.reps}
               onChange={(e) => onUpdate(i, "reps", parseInt(e.target.value) || 0)}
-              className="w-16 h-8 text-sm text-center px-1"
+              className="w-16 h-11 md:h-8 text-base md:text-sm text-center px-1"
             />
             <span className="text-xs text-muted-foreground shrink-0">reps</span>
             <Input
               type="number" min={0} step="any" value={set.weight}
               onChange={(e) => onUpdate(i, "weight", parseFloat(e.target.value) || 0)}
-              className="w-20 h-8 text-sm text-center px-1"
+              className="w-20 h-11 md:h-8 text-base md:text-sm text-center px-1"
             />
             <span className="text-xs text-muted-foreground shrink-0">kg</span>
             {sets.length > 1 && (
               <button
                 type="button"
                 onClick={() => onRemove(i)}
-                className="ml-auto w-6 h-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                className="ml-auto size-11 md:size-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <Trash2 className="w-3 h-3" />
               </button>

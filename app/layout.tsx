@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
@@ -18,6 +18,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "MyHealth",
   description: "Your AI-powered health & fitness platform",
+};
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 // Runs before React hydrates — prevents flash of wrong theme colour.

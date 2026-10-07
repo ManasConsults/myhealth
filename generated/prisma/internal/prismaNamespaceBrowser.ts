@@ -175,6 +175,7 @@ export const WorkoutLogEntryScalarFieldEnum = {
   exerciseName: 'exerciseName',
   exerciseLibraryId: 'exerciseLibraryId',
   sets: 'sets',
+  completed: 'completed',
   createdAt: 'createdAt'
 } as const
 

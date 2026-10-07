@@ -410,7 +410,7 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                         value={searchQuery}
                         onChange={(e) => { setSearchQuery(e.target.value); cancelSearchFood(); }}
                         placeholder="Search food database…"
-                        className="pl-8 pr-8 h-9 text-sm"
+                        className="pl-8 pr-11 h-11 md:h-9 text-base md:text-sm"
                       />
                       {isSearching ? (
                         <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-muted-foreground" />
@@ -418,7 +418,7 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                         <button
                           type="button"
                           onClick={() => { setSearchQuery(""); setSearchResults([]); }}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 min-w-8 min-h-8 flex items-center justify-center"
+                          className="absolute right-0 top-1/2 -translate-y-1/2 min-w-11 min-h-11 flex items-center justify-center"
                         >
                           <X className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
@@ -451,7 +451,7 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                         <Input
                           value={pendingFoodName}
                           onChange={(e) => setPendingFoodName(e.target.value)}
-                          className="h-8 text-xs"
+                          className="h-11 md:h-8 text-base md:text-xs"
                           placeholder="Food name"
                         />
                         <div className="flex items-center gap-2">
@@ -461,7 +461,7 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                             step="any"
                             value={pendingQty}
                             onChange={(e) => setPendingQty(e.target.value)}
-                            className="h-7 text-xs w-16"
+                            className="h-11 md:h-7 text-base md:text-xs w-16"
                           />
                           <select
                             value={pendingUnit}
@@ -470,7 +470,7 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                               setPendingUnit(u);
                               if (isVariableUnit(u)) setPendingGramsPerUnit(String(VARIABLE_UNIT_DEFAULTS[u] ?? 100));
                             }}
-                            className="h-7 rounded-md border border-input bg-transparent px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            className="h-11 md:h-7 rounded-md border border-input bg-transparent px-2 text-base md:text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                           >
                             {FOOD_UNIT_OPTIONS.map((u) => (
                               <option key={u} value={u}>{u}</option>
@@ -493,7 +493,7 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                           <Button
                             type="button"
                             size="sm"
-                            className="h-7 text-xs flex-1"
+                            className="h-11 md:h-7 text-xs flex-1"
                             onClick={confirmSearchFood}
                             disabled={!pendingQty || parseFloat(pendingQty) <= 0}
                           >
@@ -503,7 +503,7 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-7 text-xs"
+                            className="h-11 md:h-7 text-xs"
                             onClick={cancelSearchFood}
                           >
                             Cancel
@@ -568,26 +568,26 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                           value={customName}
                           onChange={(e) => setCustomName(e.target.value)}
                           placeholder="Food name"
-                          className="h-9 text-sm"
+                          className="h-11 md:h-9 text-base md:text-sm"
                           required
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1">
                           <Label className="text-xs">Calories</Label>
-                          <Input type="number" min={0} value={customCal} onChange={(e) => setCustomCal(e.target.value)} className="h-8 text-sm" required />
+                          <Input type="number" min={0} value={customCal} onChange={(e) => setCustomCal(e.target.value)} className="h-11 md:h-8 text-base md:text-sm" required />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Protein (g)</Label>
-                          <Input type="number" min={0} step="0.1" value={customProtein} onChange={(e) => setCustomProtein(e.target.value)} className="h-8 text-sm" />
+                          <Input type="number" min={0} step="0.1" value={customProtein} onChange={(e) => setCustomProtein(e.target.value)} className="h-11 md:h-8 text-base md:text-sm" />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Carbs (g)</Label>
-                          <Input type="number" min={0} step="0.1" value={customCarbs} onChange={(e) => setCustomCarbs(e.target.value)} className="h-8 text-sm" />
+                          <Input type="number" min={0} step="0.1" value={customCarbs} onChange={(e) => setCustomCarbs(e.target.value)} className="h-11 md:h-8 text-base md:text-sm" />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Fat (g)</Label>
-                          <Input type="number" min={0} step="0.1" value={customFat} onChange={(e) => setCustomFat(e.target.value)} className="h-8 text-sm" />
+                          <Input type="number" min={0} step="0.1" value={customFat} onChange={(e) => setCustomFat(e.target.value)} className="h-11 md:h-8 text-base md:text-sm" />
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -672,7 +672,7 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="size-11 md:size-8"
                         onClick={() => setExpandedPlan(isExpanded ? null : plan.id)}
                       >
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -680,7 +680,7 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="size-11 md:size-8"
                         onClick={() => openEditSheet(plan)}
                         disabled={isPending}
                       >
@@ -689,7 +689,7 @@ export function NutritionPlanner({ plans, onUpdate }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="size-11 md:size-8"
                         onClick={() => handleDelete(plan.id)}
                         disabled={isPending}
                       >

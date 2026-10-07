@@ -180,6 +180,7 @@ model WorkoutLogEntry {
   exerciseLibraryId String?
   exerciseLibrary   ExerciseLibrary? @relation(fields: [exerciseLibraryId], references: [id], onDelete: SetNull)
   sets              Json             // WorkoutSet[]
+  completed         Boolean          @default(false)
   createdAt         DateTime         @default(now())
 
   @@index([userId, date])

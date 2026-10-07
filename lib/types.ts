@@ -154,6 +154,7 @@ export interface WorkoutLogEntry {
   exerciseId: string;
   exerciseName: string;
   sets: WorkoutSet[];
+  completed: boolean;
 }
 
 export interface WorkoutDay {
